@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Minha Carteira</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0e0f11">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Carteira">
+<script src="dados-pessoais.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+  :root{
+    --bg:#0e0f11; --card:#17181b; --card2:#1f2125; --border:#26282d;
+    --txt:#f4f5f6; --muted:#9aa0a6; --faint:#686d73;
+    --azul:#f2c14e; --azul-esc:#101113; --verde:#2dd4a7; --verm:#ff6b6b; --amarelo:#f2c14e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--txt);font-family:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+  ::-webkit-scrollbar{height:6px;width:6px} ::-webkit-scrollbar-thumb{background:#2c2e33;border-radius:3px}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 14px 60px}
+  header{background:var(--azul-esc);border-bottom:1px solid var(--border);padding:16px 0 12px;margin-bottom:18px;position:sticky;top:0;z-index:10}
+  header .wrap{padding-bottom:0}
+  .htop{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  .htitle{font-size:1.05rem;font-weight:700;letter-spacing:-.01em}
+  .htitle::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--amarelo);margin-right:8px}
+  .hsub{font-size:.7rem;color:var(--muted);margin-left:16px}
+  .selcart{margin-left:16px;margin-top:5px;background:var(--card2);color:var(--txt);border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:.76rem;font-family:inherit;outline:none;cursor:pointer;max-width:220px}
+  .status.ok{color:var(--verde);font-weight:600}
+  .toptabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:14px}
+  .ttab{flex:1;padding:11px 4px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+  .ttab.on{color:var(--amarelo);border-bottom-color:var(--amarelo)}
+  .ccard{cursor:pointer;margin-bottom:10px;transition:.15s}
+  .ccard:hover{border-color:var(--amarelo)}
+  .ccard-h{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.88rem}
+  .ccard-r{display:flex;gap:22px;font-size:.64rem;color:var(--faint);flex-wrap:wrap;text-transform:uppercase;letter-spacing:.05em}
+  .ccard-r b{display:block;font-size:.84rem;color:var(--txt);margin-top:3px;text-transform:none;letter-spacing:0}
+  .filtro-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px}
+  .hbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn{border:none;border-radius:10px;padding:9px 16px;font-size:.76rem;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit}
+  .btn-upd{background:var(--amarelo);color:#141414}
+  .btn-upd:hover{filter:brightness(1.08)}
+  .btn-upd:disabled{opacity:.55;cursor:wait}
+  .btn-ghost{background:var(--card2);color:var(--muted)}
+  .status{font-size:.68rem;color:var(--faint);margin-top:8px;min-height:14px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+  .card .lbl{font-size:.62rem;color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+  .card .val{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
+  .card .sub{font-size:.7rem;color:var(--muted);margin-top:3px}
+  .pos{color:var(--verde)} .neg{color:var(--verm)}
+  .grid2{display:grid;grid-template-columns:340px 1fr;gap:10px;margin-bottom:18px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .sec-t{font-size:.66rem;font-weight:600;color:var(--faint);margin-bottom:12px;text-transform:uppercase;letter-spacing:.12em}
+  .chartbox{position:relative;height:230px}
+  .aloc-row{margin-bottom:11px}
+  .aloc-top{display:flex;justify-content:space-between;font-size:.74rem;margin-bottom:4px}
+  .aloc-bar{height:6px;background:#26282d;border-radius:3px;position:relative;overflow:visible}
+  .aloc-fill{height:6px;border-radius:3px;transition:width .5s}
+  .aloc-alvo{position:absolute;top:-3px;width:2px;height:12px;background:#e8e9ea;opacity:.5;border-radius:1px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .tab{padding:7px 15px;border-radius:20px;border:1px solid transparent;background:var(--card);color:var(--muted);font-size:.74rem;font-weight:600;cursor:pointer;transition:.15s}
+  .tab.on{background:var(--amarelo);color:#141414}
+  .tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow-x:auto;margin-bottom:10px}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:.6rem;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;text-align:right;padding:12px 10px;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:600}
+  th:first-child{text-align:left;padding-left:14px}
+  td{padding:11px 10px;border-bottom:1px solid #1d1f23;text-align:right;font-size:.8rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+  td:first-child{text-align:left;padding-left:14px}
+  tr:last-child td{border-bottom:none}
+  tr.clickable{cursor:pointer} tr.clickable:hover{background:#1b1d21}
+  .tk{font-weight:700;color:var(--txt)} .nm{font-size:.64rem;color:var(--faint);margin-top:1px}
+  .badge{display:inline-block;font-size:.58rem;padding:2px 7px;border-radius:9px;margin-left:6px;vertical-align:middle}
+  .b-tese{background:rgba(242,193,78,.12);color:var(--amarelo);cursor:pointer}
+  .b-man{background:#26282d;color:var(--muted)}
+  .totrow td{font-weight:700;background:#1b1d21}
+  .addbtn{width:100%;padding:12px;border:1px dashed #34373d;border-radius:14px;background:none;color:var(--muted);font-size:.76rem;font-weight:600;cursor:pointer;margin-bottom:18px;transition:.15s}
+  .addbtn:hover{color:var(--amarelo);border-color:var(--amarelo)}
+  .ops .op{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #1d1f23;font-size:.78rem;flex-wrap:wrap;gap:4px}
+  .ops .op:last-child{border-bottom:none}
+  .op .t-venda{color:var(--verm);font-weight:700;font-size:.62rem;text-transform:uppercase}
+  .op .t-compra{color:var(--verde);font-weight:700;font-size:.62rem;text-transform:uppercase}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:50;padding:14px;backdrop-filter:blur(2px)}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto}
+  .modal h3{font-size:.95rem;margin-bottom:14px;font-weight:700}
+  .modal label{display:block;font-size:.64rem;color:var(--faint);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.08em}
+  .modal input,.modal select,.modal textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;font-size:.85rem;font-family:inherit;background:var(--card2);color:var(--txt);outline:none}
+  .modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--amarelo)}
+  .mrow{display:flex;gap:10px} .mrow>div{flex:1}
+  .mbtns{display:flex;gap:8px;margin-top:16px}
+  .btn-pri{flex:1;background:var(--amarelo);color:#141414}
+  .btn-sec{flex:1;background:var(--card2);color:var(--txt)}
+  .btn-del{background:rgba(255,107,107,.12);color:var(--verm)}
+  .btn-buy{flex:1;background:var(--verde);color:#0d1f1a}
+  .btn-sell{flex:1;background:var(--verm);color:#230909}
+  .note{font-size:.7rem;color:var(--muted);background:var(--card2);border-radius:10px;padding:9px 11px;margin-top:10px;line-height:1.5}
+  .foot{font-size:.66rem;color:var(--faint);text-align:center;margin-top:26px;line-height:1.8}
+  .linklike{color:var(--amarelo);cursor:pointer;text-decoration:none;border-bottom:1px dotted var(--amarelo)}
+  @media(max-width:640px){ .mh{display:none} .card .val{font-size:1.15rem} }
+  @media(min-width:641px){ table{min-width:680px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="htop">
+      <div>
+        <div class="htitle">Minha Carteira</div>
+        <select class="selcart" id="selCart" onchange="selCarteira(this.value)"></select>
+      </div>
+      <div class="hbtns">
+        <button class="btn btn-ghost" onclick="openToken()">⚙ token</button>
+        <button class="btn btn-upd" id="btnUpd" onclick="atualizarCotacoes()">⟳ Atualizar cotações</button>
+      </div>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="cards" id="cards"></div>
+
+  <div class="toptabs">
+    <button class="ttab on" id="tt-resumo" onclick="setTop('resumo')">◔ Resumo</button>
+    <button class="ttab" id="tt-carteira" onclick="setTop('carteira')">☰ Carteira</button>
+    <button class="ttab" id="tt-prov" onclick="setTop('prov')">⛁ Proventos</button>
+    <button class="ttab" id="tt-metas" onclick="setTop('metas')">◎ Metas</button>
+  </div>
+
+  <div id="view-resumo">
+    <div class="grid2">
+      <div class="card">
+        <div class="sec-t">Alocação por classe</div>
+        <div class="chartbox"><canvas id="donut"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="sec-t">Atual vs alvo ARCA</div>
+        <div id="alocbars"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="sec-t">Evolução do patrimônio</div>
+      <div class="chartbox"><canvas id="chEvol"></canvas></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="filtro-row"><div class="sec-t" style="margin:0">Ativos na carteira</div>
+          <select class="selcart" style="margin:0" id="filtroAtivos" onchange="render()">
+            <option value="todos">Todos os tipos</option>
+            <option value="fiis">FIIs</option><option value="acoes">Ações BR</option>
+            <option value="intl">Internacional</option><option value="rf">Renda Fixa</option>
+            <option value="cripto">Cripto</option><option value="ouro">Ouro</option>
+          </select></div>
+        <div class="chartbox" style="height:280px"><canvas id="chAtivos"></canvas></div>
+      </div>
+      <div class="card" id="cardFiiTipo">
+        <div class="sec-t">FIIs por tipo</div>
+        <div class="chartbox" style="height:280px"><canvas id="chFiiTipo"></canvas></div>
+      </div>
+    </div>
+    <div id="classCards"></div>
+  </div>
+
+  <div id="view-carteira" style="display:none">
+    <div class="tabs" id="tabs"></div>
+    <div class="tbl-wrap"><table id="tbl"></table></div>
+    <button class="addbtn" onclick="openAdd()">+ Adicionar ativo</button>
+    <div class="card" style="margin-bottom:14px">
+      <div class="sec-t">Histórico de operações</div>
+      <div class="ops" id="ops"></div>
+    </div>
+  </div>
+
+  <div id="view-prov" style="display:none">
+    <div class="cards" id="provCards"></div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="sec-t">Estimativa de proventos por mês (próximos 12 meses)</div>
+      <div class="chartbox"><canvas id="chProvMes"></canvas></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="sec-t">Proventos por ativo (estimativa anual)</div>
+        <div class="chartbox" style="height:280px"><canvas id="chProvAtivo"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="sec-t">Maiores pagadores</div>
+        <div class="ops" id="provLista"></div>
+      </div>
+    </div>
+    <div class="note" style="margin-bottom:14px">Estimativas calculadas com o DY 12 meses de cada ativo sobre a posição atual — aproximação, não o valor exato que cai na conta. Tesouro, ETFs de acumulação e BTC não distribuem proventos e ficam de fora.</div>
+  </div>
+
+  <div id="view-metas" style="display:none">
+    <div class="tabs" id="metasToggle"></div>
+    <div id="metasBody"></div>
+    <div class="note" style="margin-bottom:14px">Percentuais recomendados lidos da sua Carteira Finclass em 11/06/2026. "Aportar" = quanto falta, em R$, para o ativo atingir a meta sobre o seu patrimônio atual. Verde = na meta (±0,5pp) · vermelho = abaixo · amarelo = acima.</div>
+  </div>
+
+  <div class="foot">
+    Cotações: B3 oficial (quase tempo real) com reserva brapi/Fundamentus · Stooq (ETFs EUA) · CoinGecko (BTC) · AwesomeAPI (dólar). Tesouro Direto: edição manual (toque no ativo).<br>
+    Dados salvos neste navegador (localStorage). <span class="linklike" onclick="exportar()">Exportar backup</span> ·
+    <span class="linklike" onclick="document.getElementById('impfile').click()">Importar</span> ·
+    <span class="linklike" onclick="resetar()">Restaurar dados originais</span>
+    <input type="file" id="impfile" accept=".json" style="display:none" onchange="importar(event)">
+    <br>Ferramenta de acompanhamento pessoal — não é recomendação de investimento.
+  </div>
+</div>
+
+<div class="modal-bg" id="modal"><div class="modal" id="modalbox"></div></div>
+
+<script>
+/* ============ CONFIGURAÇÃO BASE ============ */
+const VERSAO = "carteira_rychard_v1";
+const ALVO = { fiis:30, acoes:30, intl:20, rf:12, cripto:5, ouro:3 };
+const CLASSES = { fiis:"FIIs", acoes:"Ações BR", intl:"Internacional", rf:"Renda Fixa", cripto:"Cripto", ouro:"Ouro" };
+const CORES = { fiis:"#16a34a", acoes:"#1351b4", intl:"#8b5cf6", rf:"#64748b", cripto:"#22d3ee", ouro:"#eab308" };
+
+// Dados pessoais ficam em dados-pessoais.js (só no PC — nunca subir para o GitHub).
+// Na versão hospedada esse arquivo não existe e tudo vem da nuvem (⚙).
+function temSeed(){ return typeof BASE_SEED !== "undefined"; }
+const BASE = temSeed() ? BASE_SEED : { usdbrl: 5.19, ativos: [], operacoes: [], ultimaAtualizacao: null };
+/* (dados pessoais movidos para dados-pessoais.js) */
+
+/* ============ ESTADO (multi-carteira) ============ */
+const VERSAO2 = "carteiras_rychard_v2";
+let DB = carregarDB();
+let D = DB.carteiras[DB.ativa];
+let tabAtiva = "fiis";
+let topTab = "resumo";
+
+// tickers fora do padrão da B3 (Tesouro etc.) viram cotação manual automaticamente
+Object.values(DB.carteiras).forEach(c=>(c.ativos||[]).forEach(a=>{
+  if(a.moeda==="BRL" && !a.manual && a.ticker!=="BTC" && !/^[A-Z]{4}\d{1,2}$/.test(a.ticker)) a.manual=true;
+}));
+
+// gráficos Chart.js: recria sob demanda
+const charts = {};
+function mkChart(id,cfg){
+  if(charts[id]){ charts[id].destroy(); delete charts[id]; }
+  const el = document.getElementById(id); if(!el) return;
+  charts[id] = new Chart(el,cfg);
+}
+function setTop(tb){
+  topTab = tb;
+  ["resumo","carteira","prov","metas"].forEach(x=>{
+    const v=document.getElementById("view-"+x); if(v) v.style.display = x===tb? "":"none";
+    const b=document.getElementById("tt-"+x); if(b) b.className = "ttab"+(x===tb?" on":"");
+  });
+  render();
+}
+// Carteiras Finclass — % recomendado por ativo, lido em 11/06/2026
+let metaCart = "v";
+// As metas (CARTEIRAS_FIN) vivem em dados-pessoais.js (só no PC) e no banco de dados (nuvem).
+if(typeof CARTEIRAS_FIN!=="undefined" && CARTEIRAS_FIN && !DB.metasFin){
+  DB.metasFin = CARTEIRAS_FIN; DB.tsMod = Date.now();
+  try{ localStorage.setItem(VERSAO2, JSON.stringify(DB)); }catch(e){}
+  setTimeout(agendaNuvem, 1200);
+}
+function getMetasFin(){ return DB.metasFin || (typeof CARTEIRAS_FIN!=="undefined" ? CARTEIRAS_FIN : null); }
+let _mtCache=null;
+function getMetaTicker(){
+  if(_mtCache) return _mtCache;
+  const M=getMetasFin(); if(!M) return {};
+  const map={};
+  ["v","r"].forEach(k=>((M[k]&&M[k].setores)||[]).forEach(s=>s.itens.forEach(it=>it.t.forEach(tk=>{
+    (map[tk] = map[tk] || {})[k] = it.m;
+  }))));
+  return _mtCache=map;
+}
+
+// classificação dos FIIs por tipo (para o gráfico "FIIs por tipo")
+const SEG_FII = {VILG11:"Tijolo",TRXF11:"Tijolo",XPCI11:"Papel",HGLG11:"Tijolo",PATL11:"Tijolo",JSRE11:"Tijolo",PSEC11:"Papel",VISC11:"Tijolo",XPML11:"Tijolo",LVBI11:"Tijolo",MCRE11:"Papel",ALZR11:"Tijolo",KNCR11:"Papel",BTLG11:"Tijolo",BTHF11:"Híbrido",BTCI11:"Papel",RBRX11:"FoF",CPTS11:"Papel",RURA11:"Papel",BRCR11:"Tijolo",PVBI11:"Tijolo",RBVA11:"Tijolo"};
+
+function carregarDB(){
+  // formato novo (várias carteiras)
+  try{
+    const raw = localStorage.getItem(VERSAO2);
+    if(raw){ const d = JSON.parse(raw); if(d && d.carteiras && d.carteiras[d.ativa]) return d; }
+  }catch(e){}
+  // migração: aproveita a carteira antiga (formato v1) se existir
+  let antiga=null;
+  try{ const raw = localStorage.getItem(VERSAO); if(raw) antiga = JSON.parse(raw); }catch(e){}
+  if(!antiga || !antiga.ativos) antiga = JSON.parse(JSON.stringify(BASE));
+  antiga.nome = antiga.nome || "Carteira 1";
+  const cart = { ativa:"c1", carteiras:{ c1: antiga } };
+  if(temSeed()) cart.carteiras.c2 = { nome:"Mãe", usdbrl: antiga.usdbrl || BASE.usdbrl, ativos:[], operacoes:[], ultimaAtualizacao:null };
+  return cart;
+}
+let lastLocalJson = "";
+function salvar(){
+  DB.carteiras[DB.ativa]=D;
+  const j = JSON.stringify({c:DB.carteiras, a:DB.ativa, m:DB.metasFin});
+  if(j!==lastLocalJson){
+    if(lastLocalJson!=="") { DB.tsMod = Date.now(); agendaNuvem(); }
+    lastLocalJson = j;
+  }
+  try{ localStorage.setItem(VERSAO2, JSON.stringify(DB)); }catch(e){}
+}
+
+/* ===== Sincronização entre aparelhos (jsonbin.io — opcional, configurada no ⚙) ===== */
+function getJB(){ return { key: localStorage.getItem("jb_key")||"", bin: localStorage.getItem("jb_bin")||"" }; }
+let syncTimer=null, lastSyncJson="";
+function agendaNuvem(){
+  if(!getJB().key) return;
+  clearTimeout(syncTimer); syncTimer=setTimeout(salvarNuvem, 2500);
+}
+async function salvarNuvem(){
+  const {key,bin}=getJB(); if(!key) return;
+  const corpo=JSON.stringify(DB);
+  if(corpo===lastSyncJson) return;
+  try{
+    if(!bin){
+      const r=await fetchT("https://api.jsonbin.io/v3/b",12000,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":key,"X-Bin-Name":"carteira-rychard","X-Bin-Private":"true"},body:corpo});
+      const j=await r.json();
+      const id=j&&j.metadata&&j.metadata.id;
+      if(id){ localStorage.setItem("jb_bin",id); lastSyncJson=corpo; setStatus("☁ nuvem criada e sincronizada — copie o ID da nuvem (⚙) para o outro aparelho", true); }
+    } else {
+      const r=await fetchT("https://api.jsonbin.io/v3/b/"+bin,12000,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":key},body:corpo});
+      if(r.ok){ lastSyncJson=corpo; setStatus("☁ sincronizado", true); }
+    }
+  }catch(e){}
+}
+async function carregarNuvem(){
+  const {key,bin}=getJB(); if(!key||!bin) return;
+  try{
+    const r=await fetchT("https://api.jsonbin.io/v3/b/"+bin+"/latest",12000,{headers:{"X-Master-Key":key}});
+    if(!r.ok) return;
+    const j=await r.json();
+    const nuvem=j&&j.record;
+    if(nuvem && nuvem.carteiras && (nuvem.tsMod||0) > (DB.tsMod||0)){
+      DB=nuvem; D=DB.carteiras[DB.ativa]||DB.carteiras[Object.keys(DB.carteiras)[0]];
+      _mtCache=null;
+      if(typeof CARTEIRAS_FIN!=="undefined" && CARTEIRAS_FIN && !DB.metasFin) DB.metasFin=CARTEIRAS_FIN;
+      lastLocalJson=JSON.stringify({c:DB.carteiras, a:DB.ativa, m:DB.metasFin});
+      lastSyncJson=JSON.stringify(DB);
+      render();
+      setStatus("☁ dados mais recentes carregados da nuvem", true);
+    }
+  }catch(e){}
+}
+function trocarCarteira(id){
+  if(!DB.carteiras[id] || id===DB.ativa) return;
+  salvar(); DB.ativa=id; D=DB.carteiras[id]; tabAtiva="fiis"; render();
+  if(!D.ultimaAtualizacaoTs || Date.now()-D.ultimaAtualizacaoTs > 30*60*1000) setTimeout(atualizarCotacoes, 300);
+}
+function selCarteira(v){
+  if(v==="__nova"){
+    render();
+    openModal(`<h3>Nova carteira</h3><label>Nome</label><input id="f_nc" placeholder="ex: Esposa">
+      <div class="mbtns"><button class="btn btn-sec" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-pri" onclick="criaCarteira()">Criar</button></div>`);
+    return;
+  }
+  if(v==="__ren"){
+    render();
+    openModal(`<h3>Renomear carteira</h3><label>Novo nome</label><input id="f_nc" value="${esc(D.nome)}">
+      <div class="mbtns"><button class="btn btn-sec" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-pri" onclick="renomeiaCarteira()">Salvar</button></div>`);
+    return;
+  }
+  trocarCarteira(v);
+}
+function criaCarteira(){
+  const nome=document.getElementById("f_nc").value.trim(); if(!nome) return;
+  const id="c"+Date.now();
+  DB.carteiras[id]={ nome, usdbrl:D.usdbrl, ativos:[], operacoes:[], ultimaAtualizacao:null };
+  salvar(); DB.ativa=id; D=DB.carteiras[id]; tabAtiva="fiis"; closeModal(); render();
+}
+function renomeiaCarteira(){
+  const nome=document.getElementById("f_nc").value.trim();
+  if(nome) D.nome=nome;
+  closeModal(); render();
+}
+function renderSel(){
+  const sel = document.getElementById("selCart");
+  sel.innerHTML = Object.keys(DB.carteiras).map(id=>
+    `<option value="${id}" ${id===DB.ativa?'selected':''}>👤 ${esc(DB.carteiras[id].nome)}</option>`).join("")
+    + `<option value="__nova">＋ nova carteira…</option><option value="__ren">✎ renomear esta…</option>`;
+}
+function getToken(){ return localStorage.getItem("token_brapi") || (typeof TOKEN_PADRAO!=="undefined" ? TOKEN_PADRAO : ""); }
+
+/* ============ HELPERS ============ */
+const fmt = (n,d=2)=> n==null||isNaN(n) ? "—" : n.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtPct = n => n==null||isNaN(n) ? "—" : (n>=0?"+":"")+n.toFixed(2).replace(".",",")+"%";
+const toBRL = (v,m)=> m==="USD" ? v*D.usdbrl : v;
+const valor = a => toBRL((a.qtd||0)*(a.atual||0), a.moeda);
+const custo = a => toBRL((a.qtd||0)*(a.pm||0), a.moeda);
+const varPct = a => a.pm&&a.atual ? (a.atual-a.pm)/a.pm*100 : null;
+const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const parseNumBR = s => { if(s==null) return NaN; return parseFloat(String(s).replace(/\./g,"").replace("%","").replace(",",".").trim()); };
+
+function totais(){
+  const porClasse = {}; let total=0, custoTot=0;
+  for(const c in CLASSES) porClasse[c]=0;
+  D.ativos.forEach(a=>{ const v=valor(a); porClasse[a.classe]+=v; total+=v; custoTot+=custo(a); });
+  const realizado = D.operacoes.reduce((s,o)=> s+(o.tipo==="venda"?(o.resultado||0):0), 0);
+  return { porClasse, total, custoTot, naoRealizado: total-custoTot, realizado };
+}
+
+/* ============ RENDER ============ */
+function render(){
+  const t = totais();
+  // cards
+  const vp = t.custoTot? t.naoRealizado/t.custoTot*100 : 0;
+  document.getElementById("cards").innerHTML = `
+    <div class="card"><div class="lbl">Patrimônio total</div><div class="val">R$ ${fmt(t.total)}</div>
+      <div class="sub">${D.ativos.length} ativos · dólar R$ ${fmt(D.usdbrl)}</div></div>
+    <div class="card"><div class="lbl">Custo de aquisição</div><div class="val">R$ ${fmt(t.custoTot)}</div>
+      <div class="sub">preço médio investido</div></div>
+    <div class="card"><div class="lbl">Resultado não realizado</div>
+      <div class="val ${t.naoRealizado>=0?'pos':'neg'}">${t.naoRealizado>=0?"+":"−"}R$ ${fmt(Math.abs(t.naoRealizado))}</div>
+      <div class="sub ${t.naoRealizado>=0?'pos':'neg'}">${fmtPct(vp)} sobre o custo</div></div>
+    <div class="card"><div class="lbl">Resultado realizado</div>
+      <div class="val ${t.realizado>=0?'pos':'neg'}">${t.realizado>=0?"+":"−"}R$ ${fmt(Math.abs(t.realizado))}</div>
+      <div class="sub">vendas registradas</div></div>`;
+  // foto mensal do patrimônio (alimenta o gráfico de Evolução)
+  if(D.ativos.length){
+    D.hist = D.hist || {};
+    D.hist[new Date().toISOString().slice(0,7)] = {apl:+t.custoTot.toFixed(2), val:+t.total.toFixed(2)};
+  }
+  if(topTab==="resumo") renderResumo(t);
+  else if(topTab==="carteira") renderCarteira(t);
+  else if(topTab==="prov") renderProv(t);
+  else renderMetas(t);
+  // seletor de carteiras + status
+  renderSel();
+  setStatus();
+  salvar();
+}
+
+const TIP_DONUT = {callbacks:{label:ctx=>{const v=ctx.parsed;const tot=ctx.dataset.data.reduce((s,x)=>s+x,0);return ` ${ctx.label}: R$ ${fmt(v)} (${(v/tot*100).toFixed(1)}%)`;}}};
+const EIXOS = {x:{ticks:{color:"#9aa0a6"},grid:{color:"#26282d"}},y:{ticks:{color:"#9aa0a6"},grid:{color:"#26282d"}}};
+const LEG = {labels:{boxWidth:10,font:{size:11},color:"#9aa0a6"}};
+
+function renderResumo(t){
+  // rosca por classe
+  const labels=[], vals=[], cores=[];
+  for(const c in CLASSES){ if(t.porClasse[c]>0){ labels.push(CLASSES[c]); vals.push(t.porClasse[c]); cores.push(CORES[c]); } }
+  mkChart("donut",{type:"doughnut",data:{labels,datasets:[{data:vals,backgroundColor:cores,borderWidth:2,borderColor:"#17181b"}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"66%",plugins:{legend:Object.assign({position:"right"},LEG),tooltip:TIP_DONUT}}});
+  // evolução do patrimônio (fotos mensais)
+  const yms=Object.keys(D.hist||{}).sort().slice(-12);
+  mkChart("chEvol",{type:"bar",data:{labels:yms.map(m=>m.slice(5,7)+"/"+m.slice(2,4)),datasets:[
+    {label:"Valor aplicado",data:yms.map(m=>D.hist[m].apl),backgroundColor:"#2dd4a7",stack:"s",borderRadius:4},
+    {label:"Ganho de capital",data:yms.map(m=>+(D.hist[m].val-D.hist[m].apl).toFixed(2)),backgroundColor:"#f2c14e",stack:"s",borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:LEG},
+    scales:{x:Object.assign({stacked:true},EIXOS.x),y:Object.assign({stacked:true},EIXOS.y)}}});
+  // rosca por ativo (com filtro de classe)
+  const filtro=(document.getElementById("filtroAtivos")||{}).value||"todos";
+  const lista=D.ativos.filter(a=>filtro==="todos"||a.classe===filtro).map(a=>({l:a.ticker,v:valor(a)})).filter(x=>x.v>0).sort((x,y)=>y.v-x.v);
+  const pal=lista.map((_,i)=>`hsl(${Math.round(i*360/Math.max(lista.length,1))},60%,60%)`);
+  mkChart("chAtivos",{type:"doughnut",data:{labels:lista.map(x=>x.l),datasets:[{data:lista.map(x=>+x.v.toFixed(2)),backgroundColor:pal,borderWidth:2,borderColor:"#17181b"}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"55%",plugins:{legend:{display:false},tooltip:TIP_DONUT}}});
+  // FIIs por tipo (tijolo / papel / FoF / híbrido)
+  const fiis=D.ativos.filter(a=>a.classe==="fiis");
+  const cardFT=document.getElementById("cardFiiTipo");
+  if(fiis.length){
+    cardFT.style.display="";
+    const tipos={};
+    fiis.forEach(a=>{ const s=a.seg||SEG_FII[a.ticker]||"Outro"; tipos[s]=(tipos[s]||0)+valor(a); });
+    const tl=Object.keys(tipos).sort((a,b)=>tipos[b]-tipos[a]);
+    const coresT={Tijolo:"#5b8def",Papel:"#2dd4a7",FoF:"#f2c14e","Híbrido":"#b78bf5",Outro:"#ff6b6b"};
+    mkChart("chFiiTipo",{type:"doughnut",data:{labels:tl,datasets:[{data:tl.map(k=>+tipos[k].toFixed(2)),backgroundColor:tl.map(k=>coresT[k]||"#9aa0a6"),borderWidth:2,borderColor:"#17181b"}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:"55%",plugins:{legend:Object.assign({position:"right"},LEG),tooltip:TIP_DONUT}}});
+  } else cardFT.style.display="none";
+  // cards-resumo por classe (clique abre a tabela da classe)
+  document.getElementById("classCards").innerHTML = Object.keys(CLASSES).map(c=>{
+    const as=D.ativos.filter(a=>a.classe===c); if(!as.length) return "";
+    const v=as.reduce((s,a)=>s+valor(a),0), cu=as.reduce((s,a)=>s+custo(a),0);
+    const vr=cu?(v-cu)/cu*100:0;
+    return `<div class="card ccard" onclick="tabAtiva='${c}';setTop('carteira')">
+      <div class="ccard-h"><b>${CLASSES[c]}</b><span class="nm">(${as.length} ativos)</span><span style="margin-left:auto;color:var(--faint)">›</span></div>
+      <div class="ccard-r">
+        <span>Valor total<b>R$ ${fmt(v)}</b></span>
+        <span>Variação<b class="${vr>=0?'pos':'neg'}">${fmtPct(vr)}</b></span>
+        <span>% na carteira<b>${t.total?(v/t.total*100).toFixed(1).replace(".",","):0}% <span class="nm" style="display:inline">/ alvo ${ALVO[c]}%</span></b></span>
+      </div></div>`;
+  }).join("");
+  // barras alvo
+  document.getElementById("alocbars").innerHTML = Object.keys(CLASSES).map(c=>{
+    const atual = t.total? t.porClasse[c]/t.total*100 : 0;
+    const alvo = ALVO[c], diff = atual-alvo;
+    const cor = Math.abs(diff)<3 ? "var(--verde)" : diff<0 ? "var(--verm)" : "var(--amarelo)";
+    return `<div class="aloc-row">
+      <div class="aloc-top"><span>${CLASSES[c]}</span>
+        <span><b>${atual.toFixed(1).replace(".",",")}%</b> <span style="color:var(--faint)">/ alvo ${alvo}%</span>
+        <span style="color:${cor}">(${diff>=0?"+":""}${diff.toFixed(1).replace(".",",")}pp)</span></span></div>
+      <div class="aloc-bar"><div class="aloc-fill" style="width:${Math.min(atual/40*100,100)}%;background:${CORES[c]}"></div>
+        <div class="aloc-alvo" style="left:${Math.min(alvo/40*100,100)}%"></div></div></div>`;
+  }).join("");
+}
+
+function renderCarteira(t){
+  // tabs
+  document.getElementById("tabs").innerHTML = Object.keys(CLASSES).map(c=>{
+    const n = D.ativos.filter(a=>a.classe===c).length;
+    return `<button class="tab ${tabAtiva===c?'on':''}" onclick="setTab('${c}')">${CLASSES[c]} (${n})</button>`;
+  }).join("");
+  // tabela
+  const ativos = D.ativos.filter(a=>a.classe===tabAtiva).sort((x,y)=>valor(y)-valor(x));
+  let rows = `<tr><th>Ativo</th><th class="mh">Qtd</th><th class="mh">PM</th><th>Atual</th><th>Var.</th><th class="mh">P/VP</th><th class="mh">DY 12m</th><th>Posição</th><th class="mh">% cart.</th></tr>`;
+  let subtot=0;
+  rows += ativos.map((a)=>{
+    const v=valor(a); subtot+=v;
+    const p=varPct(a); const sym = a.moeda==="USD"?"US$ ":"R$ ";
+    const idx = D.ativos.indexOf(a);
+    const f = a.fund||{};
+    return `<tr class="clickable" onclick="openAtivo(${idx})">
+      <td><span class="tk">${esc(a.ticker)}</span>
+        ${a.tese?`<span class="badge b-tese" onclick="event.stopPropagation();openTese(${idx})">tese</span>`:""}
+        ${a.manual?`<span class="badge b-man" title="cotação manual">✎ manual</span>`:""}
+        <div class="nm">${esc(a.nome)}${a.tipo?` · ${esc(a.tipo)}`:""}</div></td>
+      <td class="mh">${fmt(a.qtd, a.qtd%1?4:0)}</td>
+      <td class="mh">${sym}${fmt(a.pm)}</td>
+      <td>${sym}${fmt(a.atual)}</td>
+      <td class="${p==null?'':p>=0?'pos':'neg'}">${fmtPct(p)}</td>
+      <td class="mh">${f.pvp!=null?fmt(f.pvp):"—"}</td>
+      <td class="mh">${f.dy!=null?fmt(f.dy,1)+"%":"—"}</td>
+      <td>R$ ${fmt(v)}</td>
+      <td class="mh">${t.total?(v/t.total*100).toFixed(1).replace(".",","):0}%${(DB.ativa==="c1"&&getMetaTicker()[a.ticker])?`<div class="nm">meta ${["v","r"].filter(k=>getMetaTicker()[a.ticker][k]!=null).map(k=>(k==="v"?"V ":"R ")+String(getMetaTicker()[a.ticker][k]).replace(".",",")+"%").join(" · ")}</div>`:""}</td></tr>`;
+  }).join("");
+  rows += `<tr class="totrow"><td>Total ${CLASSES[tabAtiva]}</td><td class="mh"></td><td class="mh"></td><td></td><td></td><td class="mh"></td><td class="mh"></td><td>R$ ${fmt(subtot)}</td>
+    <td class="mh">${t.total?(subtot/t.total*100).toFixed(1).replace(".",","):0}%</td></tr>`;
+  document.getElementById("tbl").innerHTML = rows;
+  // operações
+  document.getElementById("ops").innerHTML = D.operacoes.length===0 ? `<div style="color:var(--faint);font-size:.76rem">Nenhuma operação registrada.</div>` :
+    D.operacoes.map(o=>`<div class="op">
+      <div><span class="t-${o.tipo}">${o.tipo}</span> <b>${esc(o.ticker)}</b>
+        <span style="color:var(--muted)">· ${fmt(o.qtd,o.qtd%1?4:0)} × R$ ${fmt(o.preco)} · ${esc(o.data)}</span>
+        ${o.obs?`<div class="nm">${esc(o.obs)}</div>`:""}</div>
+      ${o.tipo==="venda"?`<div class="${o.resultado>=0?'pos':'neg'}" style="font-weight:700">${o.resultado>=0?"+":"−"}R$ ${fmt(Math.abs(o.resultado))}</div>`:""}
+    </div>`).join("");
+}
+
+function renderProv(t){
+  // estimativa pelo DY 12m de cada ativo sobre a posição atual
+  const pagadores = D.ativos
+    .map(a=>({tk:a.ticker, dy:(a.fund&&a.fund.dy)||0, v:valor(a)}))
+    .filter(x=>x.dy>0 && x.v>0)
+    .map(x=>({tk:x.tk, dy:x.dy, mes:x.v*x.dy/100/12, ano:x.v*x.dy/100}))
+    .sort((x,y)=>y.mes-x.mes);
+  const mesTot = pagadores.reduce((s,x)=>s+x.mes,0), anoTot = mesTot*12;
+  const yieldCart = t.total ? anoTot/t.total*100 : 0;
+  document.getElementById("provCards").innerHTML = `
+    <div class="card"><div class="lbl">Estimativa mensal</div><div class="val pos">R$ ${fmt(mesTot)}</div><div class="sub">média pelo DY 12m</div></div>
+    <div class="card"><div class="lbl">Estimativa anual</div><div class="val pos">R$ ${fmt(anoTot)}</div><div class="sub">${pagadores.length} ativos pagadores</div></div>
+    <div class="card"><div class="lbl">Yield da carteira</div><div class="val">${yieldCart.toFixed(2).replace(".",",")}%</div><div class="sub">proventos ÷ patrimônio</div></div>`;
+  // barras dos próximos 12 meses
+  const meses=[]; const agora=new Date();
+  for(let i=0;i<12;i++){ const d=new Date(agora.getFullYear(),agora.getMonth()+i,1); meses.push(String(d.getMonth()+1).padStart(2,"0")+"/"+String(d.getFullYear()).slice(2)); }
+  mkChart("chProvMes",{type:"bar",data:{labels:meses,datasets:[{label:"Estimado",data:meses.map(()=>+mesTot.toFixed(2)),backgroundColor:"#5b8def",borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:LEG},scales:EIXOS}});
+  // rosca por ativo
+  const pal=pagadores.map((_,i)=>`hsl(${Math.round(i*360/Math.max(pagadores.length,1))},60%,60%)`);
+  const tip={callbacks:{label:ctx=>{const v=ctx.parsed;const tot=ctx.dataset.data.reduce((s,x)=>s+x,0);return ` ${ctx.label}: R$ ${fmt(v)}/ano (${(v/tot*100).toFixed(1)}%)`;}}};
+  mkChart("chProvAtivo",{type:"doughnut",data:{labels:pagadores.map(x=>x.tk),datasets:[{data:pagadores.map(x=>+x.ano.toFixed(2)),backgroundColor:pal,borderWidth:2,borderColor:"#17181b"}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"55%",plugins:{legend:{display:false},tooltip:tip}}});
+  // maiores pagadores
+  document.getElementById("provLista").innerHTML = pagadores.length ?
+    pagadores.slice(0,15).map(x=>`<div class="op"><div><b>${esc(x.tk)}</b> <span class="nm" style="display:inline">DY ${fmt(x.dy,1)}%</span></div><div class="pos" style="font-weight:700">R$ ${fmt(x.mes)}/mês</div></div>`).join("")
+    : '<div style="color:var(--faint);font-size:.76rem">Sem dados de DY ainda — clique em ⟳ Atualizar cotações.</div>';
+}
+function renderMetas(t){
+  const M = getMetasFin();
+  document.getElementById("metasToggle").innerHTML = [["v",(M&&M.v&&M.v.nome)||"Carteira A"],["r",(M&&M.r&&M.r.nome)||"Carteira B"]].map(([k,n])=>
+    `<button class="tab ${metaCart===k?'on':''}" onclick="metaCart='${k}';render()">${esc(n)}</button>`).join("");
+  if(!M){
+    document.getElementById("metasBody").innerHTML = '<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:.8rem">As metas ainda não chegaram da nuvem — configure a sincronização no ⚙ e recarregue.</div>';
+    return;
+  }
+  if(DB.ativa!=="c1"){
+    document.getElementById("metasBody").innerHTML = '<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:.8rem">As metas Finclass estão configuradas para a carteira principal — selecione-a no topo para ver os ajustes.</div>';
+    return;
+  }
+  const C = M[metaCart];
+  document.getElementById("metasBody").innerHTML = C.setores.map(s=>{
+    const somaA = s.itens.reduce((x,it)=>x+it.t.reduce((y,tk)=>{const a=D.ativos.find(z=>z.ticker===tk);return y+(a?valor(a):0);},0),0);
+    const rows = s.itens.map(it=>{
+      const v = it.t.reduce((x,tk)=>{const a=D.ativos.find(y=>y.ticker===tk);return x+(a?valor(a):0);},0);
+      const atual = t.total? v/t.total*100 : 0;
+      const gap = it.m/100*t.total - v, d = atual - it.m;
+      const cor = v===0 ? "var(--faint)" : Math.abs(d)<=0.5 ? "var(--verde)" : d<0 ? "var(--verm)" : "var(--amarelo)";
+      return `<div class="op"><div><b>${esc(it.n)}</b> <span class="nm" style="display:inline">meta ${String(it.m).replace(".",",")}%</span>
+        ${v===0?'<span class="badge b-man">não possui</span>':""}
+        ${it.obs?`<div class="nm">${esc(it.obs)}</div>`:""}</div>
+        <div style="text-align:right"><b style="color:${cor}">${atual.toFixed(1).replace(".",",")}%</b>
+        <div class="nm">${gap>1? "aportar R$ "+fmt(gap,0) : gap<-1? "R$ "+fmt(-gap,0)+" acima" : "na meta ✓"}</div></div></div>`;
+    }).join("");
+    return `<div class="card" style="margin-bottom:10px">
+      <div class="ccard-h"><b>${esc(s.setor)}</b><span class="nm" style="margin-left:auto">você tem ${t.total?(somaA/t.total*100).toFixed(1).replace(".",","):0}% do patrimônio neste setor</span></div>
+      <div class="ops">${rows}</div></div>`;
+  }).join("");
+}
+function setTab(c){ tabAtiva=c; render(); }
+function setStatus(msg, tudoOk){
+  const el = document.getElementById("status");
+  el.className = "status"+(tudoOk?" ok":"");
+  if(msg){ el.textContent = msg; return; }
+  el.textContent = D.ultimaAtualizacao ? `✓ cotações atualizadas em ${D.ultimaAtualizacao}` : "sem atualização ainda — clique em ⟳";
+}
+
+/* ============ MODAIS ============ */
+const modal = document.getElementById("modal"), box = document.getElementById("modalbox");
+function openModal(html){ box.innerHTML=html; modal.classList.add("show"); }
+function closeModal(){ modal.classList.remove("show"); }
+modal.addEventListener("click", e=>{ if(e.target===modal) closeModal(); });
+
+function openTese(i){ const a=D.ativos[i];
+  openModal(`<h3>${esc(a.ticker)} — tese / observações</h3>
+    <div style="font-size:.84rem;line-height:1.6;color:var(--txt)">${esc(a.tese)}</div>
+    <div class="mbtns"><button class="btn btn-sec" onclick="closeModal()">Fechar</button></div>`);
+}
+const ATTRS_LIMPO = 'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"';
+function campoColavel(id, valor, placeholder){
+  return `<div class="mrow" style="align-items:stretch;gap:6px">
+    <div style="flex:1"><input id="${id}" value="${esc(valor)}" placeholder="${placeholder}" ${ATTRS_LIMPO}></div>
+    <button class="btn btn-sec" style="flex:0 0 auto;padding:0 13px" onclick="colar('${id}')">📋 Colar</button>
+  </div>`;
+}
+function colar(id){
+  if(!navigator.clipboard || !navigator.clipboard.readText){
+    document.getElementById("cfg_msg").textContent="Este navegador não libera a área de transferência — toque e segure no campo para colar."; return;
+  }
+  navigator.clipboard.readText().then(t=>{
+    if(t && t.trim()){ document.getElementById(id).value=t.trim(); document.getElementById("cfg_msg").textContent="✓ colado"; }
+    else document.getElementById("cfg_msg").textContent="área de transferência vazia";
+  }).catch(()=>{ document.getElementById("cfg_msg").textContent="Permissão negada — toque e segure no campo para colar."; });
+}
+function openToken(){
+  const jb=getJB();
+  openModal(`<h3>Configurações</h3>
+    <label>Token brapi.dev (cotações de ETFs/BDRs)</label>${campoColavel("f_token", getToken(), "cole seu token")}
+    <div class="note" style="margin-top:14px"><b>☁ Sincronizar PC ↔ celular (opcional)</b><br>
+    1. Crie conta gratuita em <b>jsonbin.io</b> → menu API Keys → copie a <b>Master Key</b>.<br>
+    2. Cole a Master Key abaixo e salve — o app cria a nuvem sozinho e mostra o <b>ID da nuvem</b> aqui.<br>
+    3. No outro aparelho, cole a <b>mesma Master Key + o ID da nuvem</b>. Pronto: alterações em um aparecem no outro ao abrir.</div>
+    <label>Master Key (jsonbin.io)</label>${campoColavel("f_jbk", jb.key, "cole a master key")}
+    <label>ID da nuvem ${jb.bin?"— criado ✓, copie para o outro aparelho":"(gerado sozinho no 1º salvamento)"}</label>${campoColavel("f_jbb", jb.bin, "preencha só no 2º aparelho")}
+    <div id="cfg_msg" style="color:var(--amarelo);font-size:.72rem;margin-top:8px;min-height:14px"></div>
+    <div class="mbtns"><button class="btn btn-sec" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-pri" onclick="salvaConfig()">Salvar</button></div>`);
+}
+function salvaConfig(){
+  localStorage.setItem("token_brapi", document.getElementById("f_token").value.trim());
+  localStorage.setItem("jb_key", document.getElementById("f_jbk").value.trim());
+  localStorage.setItem("jb_bin", document.getElementById("f_jbb").value.trim());
+  closeModal(); setStatus("configurações salvas ✓", true);
+  carregarNuvem(); agendaNuvem(); salvarNuvem();
+}
+function openAtivo(i){ const a=D.ativos[i]; const sym=a.moeda==="USD"?"US$":"R$";
+  openModal(`<h3>${esc(a.ticker)} <span style="color:var(--faint);font-weight:400;font-size:.78rem">${esc(a.nome)}</span></h3>
+    <div style="font-size:.8rem;color:var(--muted)">Posição: <b>${fmt(a.qtd,a.qtd%1?4:0)}</b> × ${sym} ${fmt(a.atual)} = <b>R$ ${fmt(valor(a))}</b> · PM ${sym} ${fmt(a.pm)} (<span class="${varPct(a)>=0?'pos':'neg'}">${fmtPct(varPct(a))}</span>)</div>
+    <div class="mbtns">
+      <button class="btn btn-buy" onclick="openOp(${i},'compra')">Comprar</button>
+      <button class="btn btn-sell" onclick="openOp(${i},'venda')">Vender</button></div>
+    <div class="mbtns">
+      <button class="btn btn-sec" onclick="openEdit(${i})">✎ Editar dados</button>
+      <button class="btn btn-del" onclick="delAtivo(${i})">Excluir</button></div>
+    <div class="mbtns"><button class="btn btn-sec" onclick="closeModal()">Fechar</button></div>`);
+}
+function openOp(i,tipo){ const a=D.ativos[i]; const sym=a.moeda==="USD"?"US$":"R$";
+  openModal(`<h3>${tipo==="compra"?"Registrar compra":"Registrar venda"} — ${esc(a.ticker)}</h3>
+    <div class="mrow"><div><label>Quantidade</label><input id="f_q" type="number" step="any" value="${tipo==='venda'?a.qtd:''}" max="${tipo==='venda'?a.qtd:''}"></div>
+    <div><label>Preço unitário (${sym})</label><input id="f_p" type="number" step="any" value="${a.atual}"></div></div>
+    <label>Data</label><input id="f_d" value="${new Date().toLocaleDateString('pt-BR')}">
+    <label>Observação (opcional)</label><input id="f_o" placeholder="ex: rebalance Finclass">
+    ${tipo==="compra"?'<div class="note">O preço médio será recalculado automaticamente.</div>':'<div class="note">O resultado (lucro/prejuízo) será calculado sobre o preço médio e registrado no histórico. Se vender tudo, o ativo sai da carteira.</div>'}
+    <div id="f_err" style="color:var(--verm);font-size:.72rem;margin-top:8px"></div>
+    <div class="mbtns"><button class="btn btn-sec" onclick="openAtivo(${i})">Voltar</button>
+    <button class="btn ${tipo==='compra'?'btn-buy':'btn-sell'}" onclick="execOp(${i},'${tipo}')">Confirmar ${tipo}</button></div>`);
+}
+function erroForm(msg){ const e=document.getElementById("f_err"); if(e) e.textContent=msg; }
+function execOp(i,tipo){
+  const a=D.ativos[i];
+  const q=parseFloat(document.getElementById("f_q").value), p=parseFloat(document.getElementById("f_p").value);
+  const data=document.getElementById("f_d").value.trim(), obs=document.getElementById("f_o").value.trim();
+  if(!(q>0)||!(p>0)) { erroForm("Preencha quantidade e preço."); return; }
+  if(tipo==="compra"){
+    a.pm = (a.qtd*a.pm + q*p)/(a.qtd+q);
+    a.qtd = a.qtd + q; a.atual = p;
+    D.operacoes.unshift({data,tipo:"compra",ticker:a.ticker,nome:a.nome,qtd:q,preco:p,obs});
+  } else {
+    if(q > a.qtd+1e-9){ erroForm("Quantidade maior que a posição ("+a.qtd+")."); return; }
+    const res = q*(p - a.pm) * (a.moeda==="USD"?D.usdbrl:1);
+    D.operacoes.unshift({data,tipo:"venda",ticker:a.ticker,nome:a.nome,qtd:q,preco:p,pm:a.pm,resultado:parseFloat(res.toFixed(2)),obs:obs||(a.qtd-q<=1e-9?"posição zerada":"")});
+    a.qtd = parseFloat((a.qtd-q).toFixed(8));
+    if(a.qtd<=1e-9) D.ativos.splice(i,1);
+  }
+  closeModal(); render();
+}
+function openEdit(i){ const a=D.ativos[i];
+  openModal(`<h3>Editar — ${esc(a.ticker)}</h3>
+    <div class="mrow"><div><label>Quantidade</label><input id="f_q" type="number" step="any" value="${a.qtd}"></div>
+    <div><label>Preço médio</label><input id="f_pm" type="number" step="any" value="${a.pm}"></div></div>
+    <div class="mrow"><div><label>Cotação atual</label><input id="f_at" type="number" step="any" value="${a.atual}"></div>
+    <div><label>Moeda</label><select id="f_m"><option ${a.moeda==='BRL'?'selected':''}>BRL</option><option ${a.moeda==='USD'?'selected':''}>USD</option></select></div></div>
+    <label>Nome</label><input id="f_n" value="${esc(a.nome)}">
+    <label>Tese / observações</label><textarea id="f_t" rows="3">${esc(a.tese||"")}</textarea>
+    <div class="mbtns"><button class="btn btn-sec" onclick="openAtivo(${i})">Voltar</button>
+    <button class="btn btn-pri" onclick="saveEdit(${i})">Salvar</button></div>`);
+}
+function saveEdit(i){ const a=D.ativos[i];
+  a.qtd=parseFloat(document.getElementById("f_q").value)||0;
+  a.pm=parseFloat(document.getElementById("f_pm").value)||0;
+  a.atual=parseFloat(document.getElementById("f_at").value)||0;
+  a.moeda=document.getElementById("f_m").value;
+  a.nome=document.getElementById("f_n").value.trim()||a.ticker;
+  const t=document.getElementById("f_t").value.trim(); if(t) a.tese=t; else delete a.tese;
+  closeModal(); render();
+}
+function delAtivo(i){ const a=D.ativos[i];
+  openModal(`<h3>Excluir ${esc(a.ticker)}?</h3>
+    <div class="note">Remove o ativo da carteira <b>sem registrar venda</b> (não entra no resultado realizado). Para vender de verdade, use o botão Vender.</div>
+    <div class="mbtns"><button class="btn btn-sec" onclick="openAtivo(${i})">Cancelar</button>
+    <button class="btn btn-del" style="flex:1" onclick="confirmaDel(${i})">Excluir</button></div>`);
+}
+function confirmaDel(i){ D.ativos.splice(i,1); closeModal(); render(); }
+function openAdd(){
+  const opts=Object.keys(CLASSES).map(c=>`<option value="${c}" ${c===tabAtiva?'selected':''}>${CLASSES[c]}</option>`).join("");
+  openModal(`<h3>Adicionar ativo</h3>
+    <div class="mrow"><div><label>Ticker</label><input id="f_tk" placeholder="ex: HGLG11"></div>
+    <div><label>Classe</label><select id="f_c">${opts}</select></div></div>
+    <label>Nome</label><input id="f_n" placeholder="opcional">
+    <div class="mrow"><div><label>Quantidade</label><input id="f_q" type="number" step="any"></div>
+    <div><label>Preço médio</label><input id="f_pm" type="number" step="any"></div></div>
+    <div class="mrow"><div><label>Cotação atual</label><input id="f_at" type="number" step="any"></div>
+    <div><label>Moeda</label><select id="f_m"><option>BRL</option><option>USD</option></select></div></div>
+    <div id="f_err" style="color:var(--verm);font-size:.72rem;margin-top:8px"></div>
+    <div class="mbtns"><button class="btn btn-sec" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-pri" onclick="addAtivo()">Adicionar</button></div>`);
+}
+function addAtivo(){
+  const tk=document.getElementById("f_tk").value.trim().toUpperCase(); if(!tk){erroForm("Informe o ticker.");return;}
+  const moeda=document.getElementById("f_m").value;
+  const novo={ticker:tk,nome:document.getElementById("f_n").value.trim()||tk,classe:document.getElementById("f_c").value,
+    qtd:parseFloat(document.getElementById("f_q").value)||0,pm:parseFloat(document.getElementById("f_pm").value)||0,
+    atual:parseFloat(document.getElementById("f_at").value)||0,moeda};
+  if(moeda==="BRL" && tk!=="BTC" && !/^[A-Z]{4}\d{1,2}$/.test(tk)) novo.manual=true;
+  D.ativos.push(novo);
+  closeModal(); render();
+}
+
+/* ============ COTAÇÕES AUTOMÁTICAS ============ */
+const PROXY  = u => "https://api.allorigins.win/raw?url="+encodeURIComponent(u);
+const PROXY2 = u => "https://corsproxy.io/?url="+encodeURIComponent(u);
+const PROXY3 = u => "https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u);
+
+// fetch com tempo-limite: serviço que não responde em X segundos é descartado na hora
+function fetchT(u, ms=8000, opts){
+  const c = new AbortController();
+  const id = setTimeout(()=>c.abort(), ms);
+  return fetch(u, Object.assign({signal:c.signal}, opts||{})).finally(()=>clearTimeout(id));
+}
+
+async function fetchFundamentus(url){
+  // Tabela do Fundamentus por 5 caminhos diferentes: 4 proxies CORS + leitor de texto (jina)
+  const tentativas = [
+    ()=>fetchT(PROXY(url),10000).then(r=>{ if(!r.ok) throw 0; return r.text(); }),
+    ()=>fetchT(PROXY2(url),10000).then(r=>{ if(!r.ok) throw 0; return r.text(); }),
+    ()=>fetchT(PROXY3(url),10000).then(r=>{ if(!r.ok) throw 0; return r.text(); }),
+    ()=>fetchT("https://api.allorigins.win/get?url="+encodeURIComponent(url),10000).then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(j=>j.contents||""),
+    ()=>fetchT("https://r.jina.ai/"+url,25000).then(r=>{ if(!r.ok) throw 0; return r.text(); }),
+  ];
+  for(const t of tentativas){
+    try{
+      const txt = await t();
+      if(!txt || txt.length<1000) continue;
+      const map = (txt.indexOf("<table")>=0 || txt.indexOf("<TABLE")>=0) ? parseFundHTML(txt) : parseFundTexto(txt);
+      if(map && Object.keys(map).length>5) return map;
+    }catch(e){}
+  }
+  throw new Error("todas as fontes falharam");
+}
+function parseFundHTML(html){
+  const doc = new DOMParser().parseFromString(html,"text/html");
+  const tbl = doc.querySelector("table#resultado") || doc.querySelector("table#tabelaResultado") || doc.querySelector("table");
+  if(!tbl) return null;
+  const heads = [...tbl.querySelectorAll("thead th, tr th")].map(th=>th.textContent.trim().toLowerCase());
+  const iCot = heads.findIndex(h=>h.includes("cota"));
+  const iPL  = heads.findIndex(h=>h==="p/l");
+  const iPVP = heads.findIndex(h=>h.includes("p/vp"));
+  const iDY  = heads.findIndex(h=>h.includes("yield")&&!h.includes("ffo"));
+  const map = {};
+  tbl.querySelectorAll("tbody tr").forEach(tr=>{
+    const tds=[...tr.querySelectorAll("td")].map(td=>td.textContent.trim());
+    if(!tds.length) return;
+    map[tds[0].toUpperCase()] = {
+      cot: iCot>=0?parseNumBR(tds[iCot]):NaN,
+      pl:  iPL>=0?parseNumBR(tds[iPL]):NaN,
+      pvp: iPVP>=0?parseNumBR(tds[iPVP]):NaN,
+      dy:  iDY>=0?parseNumBR(tds[iDY]):NaN,
+    };
+  });
+  return map;
+}
+function parseFundTexto(txt){
+  // Versão em texto/markdown (leitor jina): linhas de tabela separadas por "|"
+  const limpa = s => s.replace(/\[([^\]]*)\]\([^)]*\)/g,"$1").trim();
+  let heads=null; const map={};
+  for(const linha of txt.split(/\r?\n/)){
+    if(linha.indexOf("|")<0) continue;
+    let cs = linha.split("|").map(limpa);
+    while(cs.length && cs[0]==="") cs.shift();
+    while(cs.length && cs[cs.length-1]==="") cs.pop();
+    if(!cs.length || /^[-: ]+$/.test(cs.join(""))) continue;
+    if(!heads){
+      const low=cs.map(c=>c.toLowerCase());
+      if(low.some(c=>c.includes("cota")) && low.some(c=>c.includes("p/vp"))) heads=low;
+      continue;
+    }
+    const tk = cs[0].toUpperCase();
+    if(!/^[A-Z]{4}\d{1,2}$/.test(tk)) continue;
+    const iCot=heads.findIndex(h=>h.includes("cota"));
+    const iPL=heads.findIndex(h=>h==="p/l");
+    const iPVP=heads.findIndex(h=>h.includes("p/vp"));
+    const iDY=heads.findIndex(h=>h.includes("yield")&&!h.includes("ffo"));
+    map[tk]={
+      cot: iCot>=0?parseNumBR(cs[iCot]):NaN,
+      pl:  iPL>=0?parseNumBR(cs[iPL]):NaN,
+      pvp: iPVP>=0?parseNumBR(cs[iPVP]):NaN,
+      dy:  iDY>=0?parseNumBR(cs[iDY]):NaN,
+    };
+  }
+  return map;
+}
+
+async function fetchStooq(tickers){
+  // Cotações de ETFs americanos via Stooq (CSV), 1 requisição para todos — proxy + leitor jina
+  const url = "https://stooq.com/q/l/?s="+tickers.map(t=>t.toLowerCase()+".us").join(",")+"&f=sd2t2ohlcv&h&e=csv";
+  for(const u of [PROXY(url), PROXY3(url), "https://r.jina.ai/"+url]){
+    try{
+      const res = await fetchT(u, u.indexOf("r.jina.ai")>=0?25000:10000);
+      if(!res.ok) continue;
+      const csv = await res.text();
+      const map = {};
+      csv.split(/\r?\n/).forEach(l=>{
+        const c = l.split(",");
+        if(!c[0] || !/\.US$/i.test(c[0].trim())) return;
+        const sym = c[0].trim().toUpperCase().replace(".US","");
+        const close = parseFloat(c[6]);
+        if(close>0) map[sym]=close;
+      });
+      if(Object.keys(map).length) return map;
+    }catch(e){}
+  }
+  throw new Error("stooq indisponível");
+}
+
+async function fetchInfraPagina(ticker){
+  // DY 12m + P/VP de FI-Infra lendo o card do Investidor10 via leitor jina (formato validado)
+  const res = await fetchT("https://r.jina.ai/https://investidor10.com.br/fiis/"+ticker.toLowerCase()+"/", 25000);
+  if(!res.ok) throw new Error("http "+res.status);
+  const t = await res.text();
+  const mDY = t.match(new RegExp(ticker+"[\\s\\S]{0,20}?DY \\(12M\\)[\\s\\S]{0,40}?(\\d{1,2}[.,]\\d{1,2})\\s*%","i"));
+  if(!mDY) throw new Error("DY não encontrado");
+  const resto = t.slice(mDY.index, mDY.index+400);
+  const mPVP = resto.match(/P\/VP[\s\S]{0,40}?(\d{1,2}[.,]\d{1,2})/i);
+  const dy = parseFloat(mDY[1].replace(",","."));
+  if(!(dy>0 && dy<60)) throw new Error("DY fora da faixa");
+  return { dy, pvp: mPVP ? parseFloat(mPVP[1].replace(",",".")) : null };
+}
+
+async function fetchBTC(){
+  // Bitcoin em USD — 4 fontes em cadeia (Binance → Coinbase → CoinGecko → CoinGecko via proxy)
+  const fontes=[
+    async()=>{ const r=await fetchT("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"); const j=await r.json(); return parseFloat(j.price); },
+    async()=>{ const r=await fetchT("https://api.coinbase.com/v2/prices/BTC-USD/spot"); const j=await r.json(); return parseFloat(j.data && j.data.amount); },
+    async()=>{ const r=await fetchT("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"); const j=await r.json(); return j.bitcoin && j.bitcoin.usd; },
+    async()=>{ const r=await fetchT(PROXY("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd")); const j=await r.json(); return j.bitcoin && j.bitcoin.usd; },
+  ];
+  for(const f of fontes){ try{ const v=await f(); if(v>0) return v; }catch(e){} }
+  throw new Error("BTC indisponível");
+}
+
+async function fetchYahoo(ticker){
+  // Cotação de ativos americanos via Yahoo Finance — 5 caminhos, preço extraído por regex
+  const alvo = h => "https://"+h+".finance.yahoo.com/v8/finance/chart/"+ticker;
+  const urls = [
+    PROXY(alvo("query1")),
+    PROXY2(alvo("query1")),
+    PROXY3(alvo("query1")),
+    PROXY(alvo("query2")),
+    "https://r.jina.ai/"+alvo("query1"),
+  ];
+  for(const u of urls){
+    try{
+      const res = await fetchT(u, u.indexOf("r.jina.ai")>=0?25000:8000);
+      if(!res.ok) continue;
+      const t = await res.text();
+      const m = t.match(/"regularMarketPrice"\s*:\s*([\d.]+)/);
+      const v = m ? parseFloat(m[1]) : NaN;
+      if(v>0) return v;
+    }catch(e){}
+  }
+  throw new Error("sem preço");
+}
+
+function achaChave(o,k){
+  if(o && typeof o==="object"){
+    if(o[k]!=null) return o[k];
+    for(const x in o){ const r=achaChave(o[x],k); if(r!=null) return r; }
+  }
+  return null;
+}
+async function fetchB3(ticker){
+  // Endpoint público oficial da B3 — cotação quase em tempo real
+  const res = await fetchT(PROXY("https://cotacao.b3.com.br/mds/api/v1/instrumentQuotation/"+ticker));
+  if(!res.ok) throw new Error("b3 "+res.status);
+  const j = await res.json();
+  const v = parseFloat(achaChave(j,"curPrc"));
+  if(!(v>0)) throw new Error("sem curPrc");
+  return v;
+}
+
+async function fetchDY12m(ticker, token){
+  // DY 12 meses: soma dos proventos pagos no último ano ÷ cotação (via brapi)
+  const res = await fetchT(`https://brapi.dev/api/quote/${ticker}?dividends=true&token=${token}`);
+  if(!res.ok) throw new Error("brapi "+res.status);
+  const j = await res.json();
+  const r = j.results && j.results[0];
+  if(!r) throw new Error("sem dados");
+  const price = parseFloat(r.regularMarketPrice);
+  const divs = (r.dividendsData && r.dividendsData.cashDividends) || [];
+  const lim = Date.now() - 365*24*60*60*1000;
+  const soma = divs
+    .filter(d=>{ const t=new Date(d.paymentDate||d.lastDatePrior||0).getTime(); return t>=lim && t<=Date.now()+30*864e5; })
+    .reduce((s,d)=>s+(parseFloat(d.rate)||0),0);
+  if(!(soma>0)||!(price>0)) throw new Error("sem proventos");
+  return soma/price*100;
+}
+
+async function fetchBrapi(ticker, token){
+  const res = await fetchT(`https://brapi.dev/api/quote/${ticker}?token=${token}`);
+  if(!res.ok) throw new Error("brapi "+res.status);
+  const j = await res.json();
+  const r = j.results && j.results[0];
+  return r && r.regularMarketPrice;
+}
+
+async function atualizarCotacoes(){
+  const btn=document.getElementById("btnUpd");
+  btn.disabled=true; btn.textContent="⟳ buscando...";
+  let ok=0, falhas=[];
+  // 1+2) Dólar e Bitcoin em paralelo
+  setStatus("buscando dólar e Bitcoin...");
+  const passos=[
+    fetchT("https://economia.awesomeapi.com.br/json/last/USD-BRL").then(r=>r.json()).then(j=>{
+      const v=parseFloat(j.USDBRL.bid);
+      if(v>0){ D.usdbrl=parseFloat(v.toFixed(2)); ok++; } else falhas.push("dólar");
+    }).catch(()=>falhas.push("dólar"))
+  ];
+  if(D.ativos.some(a=>a.ticker==="BTC")){
+    passos.push(fetchBTC().then(v=>{
+      const btc=D.ativos.find(a=>a.ticker==="BTC");
+      if(btc && v>0){ btc.atual=v; ok++; } else falhas.push("BTC");
+    }).catch(()=>falhas.push("BTC")));
+  }
+  await Promise.allSettled(passos);
+  // 2b) ETFs americanos: Stooq traz TODOS numa única requisição → Yahoo como reserva individual
+  const usdEtfs = D.ativos.filter(a=>a.moeda==="USD" && a.ticker!=="BTC");
+  if(usdEtfs.length){
+    setStatus("buscando ETFs americanos...");
+    let m={}; try{ m=await fetchStooq(usdEtfs.map(x=>x.ticker)); }catch(e){}
+    const semPreco=[];
+    usdEtfs.forEach(a=>{
+      if(m[a.ticker]>0){ a.atual=parseFloat(m[a.ticker].toFixed(2)); ok++; } else semPreco.push(a);
+    });
+    await Promise.allSettled(semPreco.map(async a=>{
+      try{
+        const v=await fetchYahoo(a.ticker);
+        a.atual=parseFloat(v.toFixed(2)); ok++;
+      }catch(e){ falhas.push(a.ticker); }
+    }));
+  }
+  // 3) Fundamentus — indicadores P/VP, DY (mudam devagar: busca no máx. 1x/dia POR TABELA, mantém os últimos se falhar)
+  let fund={};
+  const FRESCO = 20*60*60*1000;
+  const temB3 = D.ativos.some(a=>!a.manual && a.moeda!=="USD" && a.ticker!=="BTC");
+  const precisaAc = temB3 && !(D.fundAcTs && Date.now()-D.fundAcTs < FRESCO);
+  const precisaFi = temB3 && !(D.fundFiTs && Date.now()-D.fundFiTs < FRESCO);
+  if(precisaAc || precisaFi){
+    setStatus("buscando indicadores (Fundamentus)...");
+    const [ac,fi] = await Promise.allSettled([
+      precisaAc ? fetchFundamentus("https://www.fundamentus.com.br/resultado.php") : Promise.reject("em dia"),
+      precisaFi ? fetchFundamentus("https://www.fundamentus.com.br/fii_resultado.php") : Promise.reject("em dia")
+    ]);
+    if(ac.status==="fulfilled"){ Object.assign(fund, ac.value); D.fundAcTs=Date.now(); }
+    else if(precisaAc) falhas.push("indicadores de ações (mantive anteriores)");
+    if(fi.status==="fulfilled"){ Object.assign(fund, fi.value); D.fundFiTs=Date.now(); }
+    else if(precisaFi) falhas.push("indicadores de FIIs (mantive anteriores)");
+  }
+  // indicadores (P/VP, DY, P/L) vêm do Fundamentus
+  const b3 = D.ativos.filter(a=>!a.manual && a.moeda!=="USD" && a.ticker!=="BTC");
+  b3.forEach(a=>{
+    const f = fund[a.ticker];
+    if(f) a.fund={ pl:isNaN(f.pl)?null:f.pl, pvp:isNaN(f.pvp)?null:f.pvp, dy:isNaN(f.dy)?null:f.dy };
+  });
+  // 4) PREÇO: 1º B3 oficial (quase tempo real) → 2º brapi → 3º Fundamentus
+  const token=getToken();
+  const refazer=[];
+  for(let i=0;i<b3.length;i+=10){
+    const lote=b3.slice(i,i+10);
+    setStatus(`buscando cotações da B3... ${Math.min(i+10,b3.length)}/${b3.length}`);
+    await Promise.allSettled(lote.map(async a=>{
+      let v=null;
+      try{ v=await fetchB3(a.ticker); }catch(e){}
+      if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
+      if(!(v>0)){ const f=fund[a.ticker]; if(f && f.cot>0) v=f.cot; }
+      if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else refazer.push(a);
+    }));
+  }
+  // segunda chance para falhas passageiras de proxy
+  if(refazer.length){
+    setStatus(`repetindo ${refazer.length} pendente(s)...`);
+    await Promise.allSettled(refazer.map(async a=>{
+      let v=null;
+      try{ v=await fetchB3(a.ticker); }catch(e){}
+      if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
+      if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else falhas.push(a.ticker);
+    }));
+  }
+  // 5) DY dos FI-Infra (CPTI11, KDIF11…) via histórico de proventos da brapi — 1x/dia
+  const fiInfra = D.ativos.filter(a=>a.tipo==="FI-Infra");
+  if(fiInfra.length && token && !(D.fiInfraTs && Date.now()-D.fiInfraTs < FRESCO)){
+    setStatus("calculando DY dos FI-Infra...");
+    let okFI=true;
+    await Promise.allSettled(fiInfra.map(async a=>{
+      try{
+        const ind = await fetchInfraPagina(a.ticker);
+        a.fund = Object.assign({}, a.fund, {dy:parseFloat(ind.dy.toFixed(1))}, ind.pvp?{pvp:ind.pvp}:{});
+      }catch(e){
+        try{
+          const dy = await fetchDY12m(a.ticker, token);
+          a.fund = Object.assign({}, a.fund, {dy:parseFloat(dy.toFixed(1))});
+        }catch(e2){ okFI=false; }
+      }
+    }));
+    if(okFI) D.fiInfraTs=Date.now();
+    else falhas.push("DY FI-Infra (histórico de proventos indisponível)");
+  }
+  const agora=new Date();
+  D.ultimaAtualizacao = agora.toLocaleDateString("pt-BR")+" "+String(agora.getHours()).padStart(2,"0")+":"+String(agora.getMinutes()).padStart(2,"0");
+  D.ultimaAtualizacaoTs = Date.now();
+  render();
+  setStatus(
+    falhas.length
+      ? `✓ ${ok} atualizações em ${D.ultimaAtualizacao} · pendências: ${falhas.slice(0,4).join(", ")}${falhas.length>4?"…":""}`
+      : `✅ 100% — ${ok} atualizações em ${D.ultimaAtualizacao}`,
+    falhas.length===0
+  );
+  btn.disabled=false; btn.textContent="⟳ Atualizar cotações";
+}
+
+/* ============ BACKUP / RESET ============ */
+function exportar(){
+  salvar();
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="carteiras_backup_"+new Date().toISOString().slice(0,10)+".json"; a.click();
+}
+function importar(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(d && d.carteiras && d.carteiras[d.ativa]){ DB=d; D=DB.carteiras[DB.ativa]; render(); setStatus("✓ backup completo importado", true); }
+      else if(d && d.ativos){ d.nome=d.nome||D.nome; DB.carteiras[DB.ativa]=d; D=d; render(); setStatus("✓ backup importado nesta carteira", true); }
+      else setStatus("arquivo de backup inválido");
+    }catch(e){ setStatus("arquivo de backup inválido"); }
+  };
+  r.readAsText(f);
+}
+function resetar(){
+  const ehC1 = DB.ativa==="c1";
+  openModal(`<h3>${ehC1?"Restaurar dados originais?":"Esvaziar carteira \""+esc(D.nome)+"\"?"}</h3>
+    <div class="note">${ehC1?"A carteira volta aos dados de 10/06/2026 e as edições serão perdidas. Se quiser, faça um backup antes (rodapé).":"Todos os ativos e operações desta carteira serão removidos."}</div>
+    <div class="mbtns"><button class="btn btn-sec" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-del" style="flex:1" onclick="confirmaReset()">${ehC1?"Restaurar":"Esvaziar"}</button></div>`);
+}
+function confirmaReset(){
+  if(DB.ativa==="c1"){ const nome=D.nome; D=JSON.parse(JSON.stringify(BASE)); D.nome=nome; DB.carteiras.c1=D; }
+  else { D.ativos=[]; D.operacoes=[]; }
+  closeModal(); render();
+}
+
+/* ============ INIT ============ */
+render();
+carregarNuvem(); // puxa da nuvem se houver versão mais recente (sincronização ⚙)
+// PWA: service worker (só funciona hospedado em https; no PC via arquivo é ignorado)
+if("serviceWorker" in navigator && location.protocol==="https:"){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+// atualização automática ao abrir, se os dados tiverem mais de 30 minutos
+if(!D.ultimaAtualizacaoTs || Date.now()-D.ultimaAtualizacaoTs > 30*60*1000){
+  setTimeout(atualizarCotacoes, 600);
+}
+</script>
+</body>
+</html>
