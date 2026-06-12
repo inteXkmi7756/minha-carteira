@@ -992,16 +992,22 @@ async function atualizarCotacoes(){
   const precisaAc = temB3;
   const precisaFi = temB3;
   if(precisaAc || precisaFi){
-    setStatus("buscando indicadores (Fundamentus)...");
-    const [ac,fi] = await Promise.allSettled([
-      precisaAc ? fetchFundamentus("https://www.fundamentus.com.br/resultado.php") : Promise.reject("em dia"),
-      precisaFi ? fetchFundamentus("https://www.fundamentus.com.br/fii_resultado.php") : Promise.reject("em dia")
-    ]);
-    if(ac.status==="fulfilled"){ Object.assign(fund, ac.value); D.fundAcTs=Date.now(); }
-    else if(precisaAc) falhas.push("indicadores de ações (mantive anteriores)");
-    if(fi.status==="fulfilled"){ Object.assign(fund, fi.value); D.fundFiTs=Date.now(); }
-    else if(precisaFi) falhas.push("indicadores de FIIs (mantive anteriores)");
-    // memoriza os últimos preços do Fundamentus — reserva de emergência se B3 e brapi caírem
+    setStatus("buscando tabela de preços (Fundamentus)...");
+    // em sequência (não em paralelo) e com 2ª tentativa — proxies instáveis derrubavam as duas juntas
+    const pegaTabela = async url => {
+      try{ return await fetchFundamentus(url); }
+      catch(e){ await new Promise(r=>setTimeout(r,3000)); return fetchFundamentus(url); }
+    };
+    if(precisaAc){
+      try{ Object.assign(fund, await pegaTabela("https://www.fundamentus.com.br/resultado.php")); D.fundAcTs=Date.now(); }
+      catch(e){ falhas.push("tabela de ações (Fundamentus)"); }
+    }
+    if(precisaFi){
+      setStatus("buscando tabela de FIIs (Fundamentus)...");
+      try{ Object.assign(fund, await pegaTabela("https://www.fundamentus.com.br/fii_resultado.php")); D.fundFiTs=Date.now(); }
+      catch(e){ falhas.push("tabela de FIIs (Fundamentus)"); }
+    }
+    // memoriza os últimos preços — reserva de emergência se tudo cair
     D.fundPrecos = D.fundPrecos || {};
     for(const k in fund){ if(fund[k].cot>0) D.fundPrecos[k]=fund[k].cot; }
   }
@@ -1013,6 +1019,7 @@ async function atualizarCotacoes(){
   });
   // 4) PREÇO: 1º B3 oficial (quase tempo real) → 2º brapi → 3º Fundamentus
   const token=getToken();
+  if(!token && b3.length) falhas.push("⚠ token brapi não configurado neste aparelho (⚙)");
   // sonda: a B3 via proxy está viva hoje? (1 teste; se morta, pula a camada na rodada inteira)
   let b3Viva = b3.length>0;
   if(b3Viva){
