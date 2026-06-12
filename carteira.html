@@ -310,10 +310,19 @@ function agendaNuvem(){
   if(!getJB().key) return;
   clearTimeout(syncTimer); syncTimer=setTimeout(salvarNuvem, 2500);
 }
+function dbVazio(db){ return Object.values((db&&db.carteiras)||{}).every(c=>!(c.ativos&&c.ativos.length)); }
 async function salvarNuvem(){
   const {key,bin}=getJB(); if(!key) return;
   const corpo=JSON.stringify(DB);
   if(corpo===lastSyncJson) return;
+  // proteção: um aparelho vazio nunca sobrescreve uma nuvem que tem dados
+  if(bin && dbVazio(DB)){
+    try{
+      const r0=await fetchT("https://api.jsonbin.io/v3/b/"+bin+"/latest",12000,{headers:{"X-Master-Key":key}});
+      const j0=await r0.json();
+      if(j0 && j0.record && !dbVazio(j0.record)) return;
+    }catch(e){ return; }
+  }
   try{
     if(!bin){
       const r=await fetchT("https://api.jsonbin.io/v3/b",12000,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":key,"X-Bin-Name":"carteira-rychard","X-Bin-Private":"true"},body:corpo});
@@ -333,7 +342,7 @@ async function carregarNuvem(){
     if(!r.ok) return;
     const j=await r.json();
     const nuvem=j&&j.record;
-    if(nuvem && nuvem.carteiras && (nuvem.tsMod||0) > (DB.tsMod||0)){
+    if(nuvem && nuvem.carteiras && !dbVazio(nuvem) && ((nuvem.tsMod||0) > (DB.tsMod||0) || dbVazio(DB))){
       DB=nuvem; D=DB.carteiras[DB.ativa]||DB.carteiras[Object.keys(DB.carteiras)[0]];
       _mtCache=null;
       if(typeof CARTEIRAS_FIN!=="undefined" && CARTEIRAS_FIN && !DB.metasFin) DB.metasFin=CARTEIRAS_FIN;
