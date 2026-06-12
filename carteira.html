@@ -908,14 +908,20 @@ function achaChave(o,k){
   }
   return null;
 }
+let proxiesB3 = [PROXY, PROXY3, PROXY2]; // o que funcionar vai para a frente da fila
 async function fetchB3(ticker){
-  // Endpoint público oficial da B3 — cotação quase em tempo real
-  const res = await fetchT(PROXY("https://cotacao.b3.com.br/mds/api/v1/instrumentQuotation/"+ticker));
-  if(!res.ok) throw new Error("b3 "+res.status);
-  const j = await res.json();
-  const v = parseFloat(achaChave(j,"curPrc"));
-  if(!(v>0)) throw new Error("sem curPrc");
-  return v;
+  // Endpoint público oficial da B3 — 3 proxies com auto-recuperação
+  for(let i=0;i<proxiesB3.length;i++){
+    const p = proxiesB3[i];
+    try{
+      const res = await fetchT(p("https://cotacao.b3.com.br/mds/api/v1/instrumentQuotation/"+ticker), 7000);
+      if(!res.ok) continue;
+      const j = await res.json();
+      const v = parseFloat(achaChave(j,"curPrc"));
+      if(v>0){ if(i>0) proxiesB3 = [p].concat(proxiesB3.filter(x=>x!==p)); return v; }
+    }catch(e){}
+  }
+  throw new Error("sem curPrc");
 }
 
 async function fetchDY12m(ticker, token){
@@ -994,6 +1000,9 @@ async function atualizarCotacoes(){
     else if(precisaAc) falhas.push("indicadores de ações (mantive anteriores)");
     if(fi.status==="fulfilled"){ Object.assign(fund, fi.value); D.fundFiTs=Date.now(); }
     else if(precisaFi) falhas.push("indicadores de FIIs (mantive anteriores)");
+    // memoriza os últimos preços do Fundamentus — reserva de emergência se B3 e brapi caírem
+    D.fundPrecos = D.fundPrecos || {};
+    for(const k in fund){ if(fund[k].cot>0) D.fundPrecos[k]=fund[k].cot; }
   }
   // indicadores (P/VP, DY, P/L) vêm do Fundamentus
   const b3 = D.ativos.filter(a=>!a.manual && a.moeda!=="USD" && a.ticker!=="BTC");
@@ -1012,6 +1021,7 @@ async function atualizarCotacoes(){
       try{ v=await fetchB3(a.ticker); }catch(e){}
       if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
       if(!(v>0)){ const f=fund[a.ticker]; if(f && f.cot>0) v=f.cot; }
+      if(!(v>0) && D.fundPrecos && D.fundPrecos[a.ticker]>0) v=D.fundPrecos[a.ticker];
       if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else refazer.push(a);
     }));
   }
@@ -1022,6 +1032,7 @@ async function atualizarCotacoes(){
       let v=null;
       try{ v=await fetchB3(a.ticker); }catch(e){}
       if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
+      if(!(v>0) && D.fundPrecos && D.fundPrecos[a.ticker]>0) v=D.fundPrecos[a.ticker];
       if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else falhas.push(a.ticker);
     }));
   }
