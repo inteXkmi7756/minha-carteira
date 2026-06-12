@@ -988,8 +988,9 @@ async function atualizarCotacoes(){
   let fund={};
   const FRESCO = 20*60*60*1000;
   const temB3 = D.ativos.some(a=>!a.manual && a.moeda!=="USD" && a.ticker!=="BTC");
-  const precisaAc = temB3 && !(D.fundAcTs && Date.now()-D.fundAcTs < FRESCO);
-  const precisaFi = temB3 && !(D.fundFiTs && Date.now()-D.fundFiTs < FRESCO);
+  // Fundamentus roda TODA atualização: é a base de preço de ações/FIIs (a B3 oficial sobrepõe quando disponível)
+  const precisaAc = temB3;
+  const precisaFi = temB3;
   if(precisaAc || precisaFi){
     setStatus("buscando indicadores (Fundamentus)...");
     const [ac,fi] = await Promise.allSettled([
@@ -1012,30 +1013,37 @@ async function atualizarCotacoes(){
   });
   // 4) PREÇO: 1º B3 oficial (quase tempo real) → 2º brapi → 3º Fundamentus
   const token=getToken();
+  // sonda: a B3 via proxy está viva hoje? (1 teste; se morta, pula a camada na rodada inteira)
+  let b3Viva = b3.length>0;
+  if(b3Viva){
+    setStatus("testando acesso à B3...");
+    try{ await fetchB3("PETR4"); }catch(e){ b3Viva=false; }
+  }
   const refazer=[];
   for(let i=0;i<b3.length;i+=10){
     const lote=b3.slice(i,i+10);
-    setStatus(`buscando cotações da B3... ${Math.min(i+10,b3.length)}/${b3.length}`);
+    setStatus(`buscando cotações... ${Math.min(i+10,b3.length)}/${b3.length}`);
     await Promise.allSettled(lote.map(async a=>{
       let v=null;
-      try{ v=await fetchB3(a.ticker); }catch(e){}
-      if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
+      if(b3Viva){ try{ v=await fetchB3(a.ticker); }catch(e){} }
       if(!(v>0)){ const f=fund[a.ticker]; if(f && f.cot>0) v=f.cot; }
       if(!(v>0) && D.fundPrecos && D.fundPrecos[a.ticker]>0) v=D.fundPrecos[a.ticker];
+      if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
       if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else refazer.push(a);
     }));
   }
-  // segunda chance para falhas passageiras de proxy
+  // segunda chance para falhas passageiras
   if(refazer.length){
     setStatus(`repetindo ${refazer.length} pendente(s)...`);
     await Promise.allSettled(refazer.map(async a=>{
       let v=null;
-      try{ v=await fetchB3(a.ticker); }catch(e){}
+      if(b3Viva){ try{ v=await fetchB3(a.ticker); }catch(e){} }
       if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
       if(!(v>0) && D.fundPrecos && D.fundPrecos[a.ticker]>0) v=D.fundPrecos[a.ticker];
       if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else falhas.push(a.ticker);
     }));
   }
+  if(!b3Viva && b3.length) falhas.push("B3 via proxy fora do ar — preços via Fundamentus/brapi (atraso ~15min)");
   // 5) DY dos FI-Infra (CPTI11, KDIF11…) via histórico de proventos da brapi — 1x/dia
   const fiInfra = D.ativos.filter(a=>a.tipo==="FI-Infra");
   if(fiInfra.length && token && !(D.fiInfraTs && Date.now()-D.fiInfraTs < FRESCO)){
