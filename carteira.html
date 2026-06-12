@@ -295,7 +295,7 @@ function carregarDB(){
 let lastLocalJson = "";
 function salvar(){
   DB.carteiras[DB.ativa]=D;
-  const j = JSON.stringify({c:DB.carteiras, a:DB.ativa, m:DB.metasFin});
+  const j = JSON.stringify({c:DB.carteiras, a:DB.ativa, m:DB.metasFin, tk:DB.tokenBrapi});
   if(j!==lastLocalJson){
     if(lastLocalJson!=="") { DB.tsMod = Date.now(); agendaNuvem(); }
     lastLocalJson = j;
@@ -337,7 +337,7 @@ async function carregarNuvem(){
       DB=nuvem; D=DB.carteiras[DB.ativa]||DB.carteiras[Object.keys(DB.carteiras)[0]];
       _mtCache=null;
       if(typeof CARTEIRAS_FIN!=="undefined" && CARTEIRAS_FIN && !DB.metasFin) DB.metasFin=CARTEIRAS_FIN;
-      lastLocalJson=JSON.stringify({c:DB.carteiras, a:DB.ativa, m:DB.metasFin});
+      lastLocalJson=JSON.stringify({c:DB.carteiras, a:DB.ativa, m:DB.metasFin, tk:DB.tokenBrapi});
       lastSyncJson=JSON.stringify(DB);
       render();
       setStatus("☁ dados mais recentes carregados da nuvem", true);
@@ -383,7 +383,7 @@ function renderSel(){
     `<option value="${id}" ${id===DB.ativa?'selected':''}>👤 ${esc(DB.carteiras[id].nome)}</option>`).join("")
     + `<option value="__nova">＋ nova carteira…</option><option value="__ren">✎ renomear esta…</option>`;
 }
-function getToken(){ return localStorage.getItem("token_brapi") || (typeof TOKEN_PADRAO!=="undefined" ? TOKEN_PADRAO : ""); }
+function getToken(){ return localStorage.getItem("token_brapi") || DB.tokenBrapi || (typeof TOKEN_PADRAO!=="undefined" ? TOKEN_PADRAO : ""); }
 
 /* ============ HELPERS ============ */
 const fmt = (n,d=2)=> n==null||isNaN(n) ? "—" : n.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -647,9 +647,12 @@ function openToken(){
     <button class="btn btn-pri" onclick="salvaConfig()">Salvar</button></div>`);
 }
 function salvaConfig(){
-  localStorage.setItem("token_brapi", document.getElementById("f_token").value.trim());
+  const tk = document.getElementById("f_token").value.trim();
+  localStorage.setItem("token_brapi", tk);
+  if(tk) DB.tokenBrapi = tk; // o token também viaja pela nuvem — cola uma vez, vale em todos os aparelhos
   localStorage.setItem("jb_key", document.getElementById("f_jbk").value.trim());
   localStorage.setItem("jb_bin", document.getElementById("f_jbb").value.trim());
+  salvar();
   closeModal(); setStatus("configurações salvas ✓", true);
   carregarNuvem(); agendaNuvem(); salvarNuvem();
 }
