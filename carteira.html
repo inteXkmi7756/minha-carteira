@@ -325,6 +325,8 @@ async function salvarNuvem(){
   }
   try{
     if(!bin){
+      // aparelho vazio não cria nuvem nova — evita "nuvens fantasma" e sobrescritas acidentais
+      if(dbVazio(DB)){ setStatus("aparelho vazio — cole também o ID da nuvem no ⚙ para puxar seus dados"); return; }
       const r=await fetchT("https://api.jsonbin.io/v3/b",12000,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":key,"X-Bin-Name":"carteira-rychard","X-Bin-Private":"true"},body:corpo});
       const j=await r.json();
       const id=j&&j.metadata&&j.metadata.id;

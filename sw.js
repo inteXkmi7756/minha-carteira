@@ -1,7 +1,7 @@
 /* Service worker — Minha Carteira
    Estratégia: stale-while-revalidate para o app e o Chart.js (abre instantâneo,
    atualiza em segundo plano). Chamadas de cotações/nuvem vão direto à rede. */
-const CACHE = "carteira-v6";
+const CACHE = "carteira-v7";
 const SHELL = ["./", "./carteira.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
