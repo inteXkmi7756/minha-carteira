@@ -120,6 +120,7 @@
       </div>
     </div>
     <div class="status" id="status"></div>
+    <div class="status" id="sync" style="margin-top:2px"></div>
   </div>
 </header>
 
@@ -320,22 +321,38 @@ async function salvarNuvem(){
     try{
       const r0=await fetchT("https://api.jsonbin.io/v3/b/"+bin+"/latest",12000,{headers:{"X-Master-Key":key}});
       const j0=await r0.json();
-      if(j0 && j0.record && !dbVazio(j0.record)) return;
-    }catch(e){ return; }
+      if(j0 && j0.record && !dbVazio(j0.record)){ setSync("☁ não enviei: este aparelho está vazio e a nuvem tem dados — recarregue para puxá-los"); return; }
+    }catch(e){ setSync("☁ sem resposta da nuvem — não enviei nada por segurança"); return; }
   }
+  setSync("☁ sincronizando…");
   try{
     if(!bin){
       // aparelho vazio não cria nuvem nova — evita "nuvens fantasma" e sobrescritas acidentais
-      if(dbVazio(DB)){ setStatus("aparelho vazio — cole também o ID da nuvem no ⚙ para puxar seus dados"); return; }
+      if(dbVazio(DB)){ setSync("☁ aparelho vazio — cole também o ID da nuvem no ⚙ para puxar seus dados"); return; }
       const r=await fetchT("https://api.jsonbin.io/v3/b",12000,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":key,"X-Bin-Name":"carteira-rychard","X-Bin-Private":"true"},body:corpo});
       const j=await r.json();
       const id=j&&j.metadata&&j.metadata.id;
-      if(id){ localStorage.setItem("jb_bin",id); lastSyncJson=corpo; setStatus("☁ nuvem criada e sincronizada — copie o ID da nuvem (⚙) para o outro aparelho", true); }
+      if(id){ localStorage.setItem("jb_bin",id); lastSyncJson=corpo; tentativasSync=0; setSync("☁ nuvem criada e sincronizada — copie o ID da nuvem (⚙) para o outro aparelho", true); }
+      else falhaSync("nuvem recusou a criação: "+JSON.stringify(j).slice(0,80));
     } else {
       const r=await fetchT("https://api.jsonbin.io/v3/b/"+bin,12000,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":key},body:corpo});
-      if(r.ok){ lastSyncJson=corpo; setStatus("☁ sincronizado", true); }
+      if(r.ok){
+        lastSyncJson=corpo; tentativasSync=0;
+        const ag=new Date();
+        setSync("☁ sincronizado às "+String(ag.getHours()).padStart(2,"0")+":"+String(ag.getMinutes()).padStart(2,"0"), true);
+      } else falhaSync("erro "+r.status+(r.status===401?" — confira a Master Key no ⚙":""));
     }
-  }catch(e){}
+  }catch(e){ falhaSync("sem conexão"); }
+}
+let tentativasSync=0;
+function falhaSync(motivo){
+  tentativasSync++;
+  if(tentativasSync<=3){
+    setSync(`☁ FALHA ao sincronizar (${motivo}) — tentativa ${tentativasSync}/3 em 20s`);
+    clearTimeout(syncTimer); syncTimer=setTimeout(salvarNuvem, 20000);
+  } else {
+    setSync(`☁ NÃO sincronizado (${motivo}) — suas alterações estão só neste aparelho; verifique o ⚙ ou a internet`);
+  }
 }
 async function carregarNuvem(){
   const {key,bin}=getJB(); if(!key||!bin) return;
@@ -351,9 +368,9 @@ async function carregarNuvem(){
       lastLocalJson=JSON.stringify({c:DB.carteiras, a:DB.ativa, m:DB.metasFin, tk:DB.tokenBrapi});
       lastSyncJson=JSON.stringify(DB);
       render();
-      setStatus("☁ dados mais recentes carregados da nuvem", true);
+      setSync("☁ dados mais recentes carregados da nuvem", true);
     }
-  }catch(e){}
+  }catch(e){ setSync("☁ não consegui consultar a nuvem ao abrir — dados locais em uso"); }
 }
 function trocarCarteira(id){
   if(!DB.carteiras[id] || id===DB.ativa) return;
@@ -611,9 +628,16 @@ function renderMetas(t){
 function setTab(c){ tabAtiva=c; render(); }
 function setStatus(msg, tudoOk){
   const el = document.getElementById("status");
-  el.className = "status"+(tudoOk?" ok":"");
-  if(msg){ el.textContent = msg; return; }
-  el.textContent = D.ultimaAtualizacao ? `✓ cotações atualizadas em ${D.ultimaAtualizacao}` : "sem atualização ainda — clique em ⟳";
+  if(msg){ el.className="status"+(tudoOk?" ok":""); el.textContent=msg; return; }
+  // sem mensagem explícita: mostra o ÚLTIMO resultado de atualização (persistente, não some)
+  el.className = "status"+(D.ultimoResultadoOk?" ok":"");
+  el.textContent = D.ultimoResultado || (D.ultimaAtualizacao ? `✓ cotações atualizadas em ${D.ultimaAtualizacao}` : "sem atualização ainda — clique em ⟳");
+}
+// linha separada para a nuvem — nunca cobre o resultado das cotações
+function setSync(msg, ok){
+  const el = document.getElementById("sync"); if(!el) return;
+  el.className = "status"+(ok?" ok":"");
+  el.textContent = msg||"";
 }
 
 /* ============ MODAIS ============ */
@@ -664,7 +688,7 @@ function salvaConfig(){
   localStorage.setItem("jb_key", document.getElementById("f_jbk").value.trim());
   localStorage.setItem("jb_bin", document.getElementById("f_jbb").value.trim());
   salvar();
-  closeModal(); setStatus("configurações salvas ✓", true);
+  closeModal(); setSync("configurações salvas ✓", true);
   carregarNuvem(); agendaNuvem(); salvarNuvem();
 }
 function openAtivo(i){ const a=D.ativos[i]; const sym=a.moeda==="USD"?"US$":"R$";
@@ -1087,13 +1111,12 @@ async function atualizarCotacoes(){
   const agora=new Date();
   D.ultimaAtualizacao = agora.toLocaleDateString("pt-BR")+" "+String(agora.getHours()).padStart(2,"0")+":"+String(agora.getMinutes()).padStart(2,"0");
   D.ultimaAtualizacaoTs = Date.now();
+  D.ultimoResultado = falhas.length
+      ? `✓ ${ok} atualizações em ${D.ultimaAtualizacao} · pendências: ${falhas.slice(0,4).join(", ")}${falhas.length>4?` (+${falhas.length-4})`:""}`
+      : `✅ 100% — ${ok} atualizações em ${D.ultimaAtualizacao}`;
+  D.ultimoResultadoOk = falhas.length===0;
   render();
-  setStatus(
-    falhas.length
-      ? `✓ ${ok} atualizações em ${D.ultimaAtualizacao} · pendências: ${falhas.slice(0,4).join(", ")}${falhas.length>4?"…":""}`
-      : `✅ 100% — ${ok} atualizações em ${D.ultimaAtualizacao}`,
-    falhas.length===0
-  );
+  setStatus();
   btn.disabled=false; btn.textContent="⟳ Atualizar cotações";
 }
 
