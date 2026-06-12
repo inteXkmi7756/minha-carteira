@@ -216,6 +216,16 @@
 <div class="modal-bg" id="modal"><div class="modal" id="modalbox"></div></div>
 
 <script>
+// Link de configuração (#cfg=...): abrir um "link mágico" aplica as chaves sozinho neste aparelho/navegador
+try{
+  if(location.hash && location.hash.indexOf("#cfg=")===0){
+    const _cfg = JSON.parse(decodeURIComponent(location.hash.slice(5)));
+    if(_cfg.k) localStorage.setItem("jb_key", _cfg.k);
+    if(_cfg.b) localStorage.setItem("jb_bin", _cfg.b);
+    if(_cfg.t) localStorage.setItem("token_brapi", _cfg.t);
+  }
+}catch(e){}
+
 /* ============ CONFIGURAÇÃO BASE ============ */
 const VERSAO = "carteira_rychard_v1";
 const ALVO = { fiis:30, acoes:30, intl:20, rf:12, cripto:5, ouro:3 };
@@ -677,9 +687,25 @@ function openToken(){
     3. No outro aparelho, cole a <b>mesma Master Key + o ID da nuvem</b>. Pronto: alterações em um aparecem no outro ao abrir.</div>
     <label>Master Key (jsonbin.io)</label>${campoColavel("f_jbk", jb.key, "cole a master key")}
     <label>ID da nuvem ${jb.bin?"— criado ✓, copie para o outro aparelho":"(gerado sozinho no 1º salvamento)"}</label>${campoColavel("f_jbb", jb.bin, "preencha só no 2º aparelho")}
+    ${linkConfig()?`<div class="note" style="margin-top:12px"><b>🔗 Link mágico de configuração</b><br>
+    Abra este link em QUALQUER aparelho ou navegador novo e ele se configura sozinho (chaves + nuvem + token). Para instalar no iPhone: abra o link no Safari → Compartilhar → Adicionar à Tela de Início. <b>Não compartilhe com ninguém</b> — ele contém suas chaves.</div>
+    <div class="mrow" style="gap:6px"><div style="flex:1"><input id="f_link" readonly value="${esc(linkConfig())}"></div>
+    <button class="btn btn-sec" style="flex:0 0 auto;padding:0 13px" onclick="copiaLink()">Copiar</button></div>`:""}
     <div id="cfg_msg" style="color:var(--amarelo);font-size:.72rem;margin-top:8px;min-height:14px"></div>
     <div class="mbtns"><button class="btn btn-sec" onclick="closeModal()">Cancelar</button>
     <button class="btn btn-pri" onclick="salvaConfig()">Salvar</button></div>`);
+}
+function linkConfig(){
+  const jb=getJB(); if(!jb.key || !jb.bin) return "";
+  const base = location.protocol==="https:" ? (location.origin+location.pathname) : "https://intexkmi7756.github.io/minha-carteira/carteira.html";
+  return base+"#cfg="+encodeURIComponent(JSON.stringify({k:jb.key, b:jb.bin, t:getToken()}));
+}
+function copiaLink(){
+  const el=document.getElementById("f_link"); if(!el) return;
+  el.select(); el.setSelectionRange(0, 99999);
+  const okMsg=()=>{ const m=document.getElementById("cfg_msg"); if(m) m.textContent="✓ link copiado — abra no outro aparelho/navegador"; };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(el.value).then(okMsg).catch(()=>{ try{document.execCommand("copy");okMsg();}catch(e){} }); }
+  else { try{ document.execCommand("copy"); okMsg(); }catch(e){} }
 }
 function salvaConfig(){
   const tk = document.getElementById("f_token").value.trim();
