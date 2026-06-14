@@ -1013,10 +1013,11 @@ async function fetchBrapi(ticker, token){
   return r && r.regularMarketPrice;
 }
 
+function mercadoAberto(){var d=new Date(),dia=d.getDay(),h=d.getHours()+d.getMinutes()/60;return dia>=1&&dia<=5&&h>=10&&h<18.2;}
 async function atualizarCotacoes(){
   const btn=document.getElementById("btnUpd");
   btn.disabled=true; btn.textContent="⟳ buscando...";
-  let ok=0, falhas=[];
+  let ok=0, falhas=[], avisos=[];
   // 1+2) Dólar e Bitcoin em paralelo
   setStatus("buscando dólar e Bitcoin...");
   const passos=[
@@ -1114,7 +1115,7 @@ async function atualizarCotacoes(){
       if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else falhas.push(a.ticker);
     }));
   }
-  if(!b3Viva && b3.length) falhas.push("B3 via proxy fora do ar — preços via Fundamentus/brapi (atraso ~15min)");
+  if(!b3Viva && b3.length) avisos.push("B3 via proxy fora do ar — preços via Fundamentus/brapi (atraso ~15min)");
   // 5) DY dos FI-Infra (CPTI11, KDIF11…) via histórico de proventos da brapi — 1x/dia
   const fiInfra = D.ativos.filter(a=>a.tipo==="FI-Infra");
   if(fiInfra.length && token && !(D.fiInfraTs && Date.now()-D.fiInfraTs < FRESCO)){
@@ -1140,7 +1141,7 @@ async function atualizarCotacoes(){
   D.ultimoResultado = falhas.length
       ? `✓ ${ok} atualizações em ${D.ultimaAtualizacao} · pendências: ${falhas.slice(0,4).join(", ")}${falhas.length>4?` (+${falhas.length-4})`:""}`
       : `✅ 100% — ${ok} atualizações em ${D.ultimaAtualizacao}`;
-  D.ultimoResultadoOk = falhas.length===0;
+  D.ultimoResultadoOk = falhas.length===0; if(!falhas.length){var _nota=mercadoAberto()?(avisos.length?" · "+avisos[0]:""):" · mercado fechado (último fechamento)"; D.ultimoResultado="✅ "+ok+" atualizações em "+D.ultimaAtualizacao+_nota;}
   render();
   setStatus();
   btn.disabled=false; btn.textContent="⟳ Atualizar cotações";
