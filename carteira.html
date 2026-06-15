@@ -319,7 +319,7 @@ function getJB(){ return { key: localStorage.getItem("jb_key")||"", bin: localSt
 let syncTimer=null, lastSyncJson="";
 function agendaNuvem(){
   if(!getJB().key) return;
-  clearTimeout(syncTimer); syncTimer=setTimeout(salvarNuvem, 2500);
+  clearTimeout(syncTimer); syncTimer=setTimeout(function(){ salvarNuvem(); publicarMae(); }, 2500);
 }
 function dbVazio(db){ return Object.values((db&&db.carteiras)||{}).every(c=>!(c.ativos&&c.ativos.length)); }
 async function salvarNuvem(){
@@ -712,6 +712,55 @@ function colarConfig(){
     }).catch(function(){ if(m) m.textContent="Não consegui ler a área de transferência. Cole o link no campo acima e toque em Configurar."; });
   } else if(m){ m.textContent="Cole o link no campo acima e toque em Configurar."; }
 }
+var lastMaeJson="";
+async function publicarMae(){
+  if(!DB.maeBin || !DB.maeCartId) return;
+  var cart=DB.carteiras[DB.maeCartId]; if(!cart) return;
+  var corpo=JSON.stringify({nome:cart.nome,usdbrl:cart.usdbrl,ativos:cart.ativos||[],operacoes:cart.operacoes||[],hist:cart.hist||{}});
+  if(corpo===lastMaeJson) return;
+  var key=getJB().key; if(!key) return;
+  try{ var r=await fetchT("https://api.jsonbin.io/v3/b/"+DB.maeBin,12000,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":key},body:corpo}); if(r.ok) lastMaeJson=corpo; }catch(e){}
+}
+async function configurarMae(){
+  var key=getJB().key; if(!key){ setSync("Configure a nuvem (Master Key) e salve primeiro."); return; }
+  try{
+    if(!DB.maeCartId) DB.maeCartId=DB.ativa;
+    var cart=DB.carteiras[DB.maeCartId];
+    var corpo=JSON.stringify({nome:cart.nome,usdbrl:cart.usdbrl,ativos:cart.ativos||[],operacoes:cart.operacoes||[],hist:cart.hist||{}});
+    if(!DB.maeBin){
+      setSync("criando espaco da mae na nuvem...");
+      var r=await fetchT("https://api.jsonbin.io/v3/b",15000,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":key,"X-Bin-Name":"carteira-mae","X-Bin-Private":"true"},body:corpo});
+      var j=await r.json(); var id=j&&j.metadata&&j.metadata.id; if(!id){ setSync("Falha ao criar espaco: "+((j&&j.message)||r.status)); return; } DB.maeBin=id; lastMaeJson=corpo;
+    } else { lastMaeJson=""; await publicarMae(); }
+    if(!DB.maeKey){
+      setSync("criando chave so-leitura...");
+      var r2=await fetchT("https://api.jsonbin.io/v3/a",15000,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":key,"X-Key-Name":"mae-readonly"},body:JSON.stringify({bins:{read:true,update:false,delete:false,create:false}})});
+      var j2=await r2.json(); if(j2&&j2.accessKey){ DB.maeKey=j2.accessKey; } else { setSync("Falha ao criar chave: "+((j2&&j2.message)||r2.status)); return; }
+    }
+    salvar(); openToken(); setSync("OK - acesso da mae pronto. Copie o link e envie pra ela.", true);
+  }catch(e){ setSync("Erro ao configurar: "+e); }
+}
+function linkMae(){
+  if(!DB.maeBin||!DB.maeKey) return "";
+  var base = location.protocol==="https:" ? (location.origin+location.pathname.replace(/[^\/]*$/,"mae.html")) : "https://intexkmi7756.github.io/minha-carteira/mae.html";
+  return base+"#mae="+encodeURIComponent(JSON.stringify({b:DB.maeBin,k:DB.maeKey}));
+}
+function secaoMae(){
+  var cfgOk=!!(DB.maeBin&&DB.maeKey);
+  var nome=esc((DB.carteiras[DB.ativa]||{}).nome||"");
+  var s='<div class="note" style="margin-top:14px"><b>&#128065; Compartilhar com a m&atilde;e (s&oacute;-leitura)</b><br>Cria um link pra ela ver a carteira <b>'+nome+'</b> no celular, sem poder alterar nada. S&oacute; voc&ecirc; edita aqui no PC.</div>';
+  var lbl=!getJB().key?'Configure a nuvem e salve primeiro':(cfgOk?'Republicar carteira da m&atilde;e agora':'Criar acesso da m&atilde;e');
+  s+='<button class="btn btn-sec" style="width:100%;margin-bottom:6px" onclick="configurarMae()">'+lbl+'</button>';
+  if(cfgOk){ s+='<div class="mrow" style="gap:6px"><div style="flex:1"><input id="f_maelink" readonly value="'+esc(linkMae())+'"></div><button class="btn btn-sec" style="flex:0 0 auto;padding:0 13px" onclick="copiaLinkMae()">Copiar</button></div>'; }
+  return s;
+}
+function copiaLinkMae(){
+  var el=document.getElementById("f_maelink"); if(!el) return;
+  el.select(); el.setSelectionRange(0,99999);
+  var ok=function(){ setSync("link da mae copiado - envie pra ela.", true); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(el.value).then(ok).catch(function(){ try{document.execCommand("copy");ok();}catch(e){} }); }
+  else { try{ document.execCommand("copy"); ok(); }catch(e){} }
+}
 function openToken(){
   const jb=getJB();
   openModal(`<h3>Configurações</h3>
@@ -729,6 +778,7 @@ function openToken(){
     Abra este link em QUALQUER aparelho ou navegador novo e ele se configura sozinho (chaves + nuvem + token). Para instalar no iPhone: abra o link no Safari → Compartilhar → Adicionar à Tela de Início. <b>Não compartilhe com ninguém</b> — ele contém suas chaves.</div>
     <div class="mrow" style="gap:6px"><div style="flex:1"><input id="f_link" readonly value="${esc(linkConfig())}"></div>
     <button class="btn btn-sec" style="flex:0 0 auto;padding:0 13px" onclick="copiaLink()">Copiar</button></div>`:""}
+    ${secaoMae()}
     <div id="cfg_msg" style="color:var(--amarelo);font-size:.72rem;margin-top:8px;min-height:14px"></div>
     <div class="mbtns"><button class="btn btn-sec" onclick="closeModal()">Cancelar</button>
     <button class="btn btn-pri" onclick="salvaConfig()">Salvar</button></div>`);
