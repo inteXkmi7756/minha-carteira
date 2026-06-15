@@ -677,9 +677,36 @@ function colar(id){
     else document.getElementById("cfg_msg").textContent="área de transferência vazia";
   }).catch(()=>{ document.getElementById("cfg_msg").textContent="Permissão negada — toque e segure no campo para colar."; });
 }
+function aplicarCfgTexto(txt){
+  try{
+    if(!txt) return false;
+    var i=txt.indexOf("cfg="); if(i<0) return false;
+    var payload=txt.slice(i+4).trim();
+    var c1=payload.indexOf("&"); if(c1>=0) payload=payload.slice(0,c1);
+    var c2=payload.indexOf("#"); if(c2>=0) payload=payload.slice(0,c2);
+    var cfg=JSON.parse(decodeURIComponent(payload));
+    if(cfg.k) localStorage.setItem("jb_key", cfg.k);
+    if(cfg.b) localStorage.setItem("jb_bin", cfg.b);
+    if(cfg.t) localStorage.setItem("token_brapi", cfg.t);
+    return !!cfg.k;
+  }catch(e){ return false; }
+}
+function colarConfig(){
+  var msg=function(t){ var m=document.getElementById("cfg_msg"); if(m) m.textContent=t; };
+  if(!navigator.clipboard || !navigator.clipboard.readText){ msg("Toque e segure para colar o link nos campos abaixo."); return; }
+  navigator.clipboard.readText().then(function(txt){
+    if(aplicarCfgTexto(txt)){
+      salvar(); msg("✓ configurado! puxando sua carteira da nuvem...");
+      carregarNuvem();
+      setTimeout(function(){ closeModal(); render(); }, 900);
+    } else { msg("Não achei um link de configuração copiado. Copie o link mágico (⚙ no aparelho que já funciona) e toque aqui de novo."); }
+  }).catch(function(){ msg("Permissão de colar negada — cole manualmente nos campos abaixo."); });
+}
 function openToken(){
   const jb=getJB();
   openModal(`<h3>Configurações</h3>
+    <button class="btn btn-pri" style="width:100%;display:block;margin-bottom:10px" onclick="colarConfig()">📋 Colar link de configuração</button>
+    <div class="note" style="margin-top:0;margin-bottom:6px">Atalho novo abriu vazio? Copie o <b>link mágico</b> no aparelho que já funciona (⚙ → Copiar) e toque no botão acima — eu configuro tudo sozinho. Ou preencha manualmente abaixo.</div>
     <label>Token brapi.dev (cotações de ETFs/BDRs)</label>${campoColavel("f_token", getToken(), "cole seu token")}
     <div class="note" style="margin-top:14px"><b>☁ Sincronizar PC ↔ celular (opcional)</b><br>
     1. Crie conta gratuita em <b>jsonbin.io</b> → menu API Keys → copie a <b>Master Key</b>.<br>
@@ -1086,7 +1113,7 @@ async function atualizarCotacoes(){
   const token=getToken();
   if(!token && b3.length) falhas.push("⚠ token brapi não configurado neste aparelho (⚙)");
   // sonda: a B3 via proxy está viva hoje? (1 teste; se morta, pula a camada na rodada inteira)
-  let b3Viva = b3.length>0;
+  let b3Viva = false; /* B3 tempo real desligada (instavel). Fonte estavel: Fundamentus/brapi */
   if(b3Viva){
     setStatus("testando acesso à B3...");
     try{ await fetchB3("PETR4"); }catch(e){ b3Viva=false; }
@@ -1115,7 +1142,7 @@ async function atualizarCotacoes(){
       if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else falhas.push(a.ticker);
     }));
   }
-  if(!b3Viva && b3.length) avisos.push("B3 via proxy fora do ar — preços via Fundamentus/brapi (atraso ~15min)");
+  if(false) avisos.push("B3 via proxy fora do ar — preços via Fundamentus/brapi (atraso ~15min)");
   // 5) DY dos FI-Infra (CPTI11, KDIF11…) via histórico de proventos da brapi — 1x/dia
   const fiInfra = D.ativos.filter(a=>a.tipo==="FI-Infra");
   if(fiInfra.length && token && !(D.fiInfraTs && Date.now()-D.fiInfraTs < FRESCO)){
@@ -1182,7 +1209,7 @@ function confirmaReset(){
 
 /* ============ INIT ============ */
 render();
-carregarNuvem(); // puxa da nuvem se houver versão mais recente (sincronização ⚙)
+carregarNuvem(); if(!getJB().key && (!D.ativos || !D.ativos.length)) setTimeout(openToken, 500); // puxa da nuvem se houver versão mais recente (sincronização ⚙)
 // PWA: service worker (só funciona hospedado em https; no PC via arquivo é ignorado)
 if("serviceWorker" in navigator && location.protocol==="https:"){
   navigator.serviceWorker.register("sw.js").catch(()=>{});
