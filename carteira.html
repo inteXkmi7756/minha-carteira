@@ -691,22 +691,33 @@ function aplicarCfgTexto(txt){
     return !!cfg.k;
   }catch(e){ return false; }
 }
+function aplicaCfgEFecha(txt){
+  var m=document.getElementById("cfg_msg");
+  if(aplicarCfgTexto(txt)){
+    salvar(); if(m) m.textContent="✓ configurado! puxando sua carteira...";
+    carregarNuvem();
+    setTimeout(function(){ closeModal(); render(); }, 900);
+    return true;
+  }
+  if(m) m.textContent="Não reconheci o link. Cole o link completo (começa com https e contém #cfg=).";
+  return false;
+}
+function configDoCampo(){ var el=document.getElementById("f_cfglink"); aplicaCfgEFecha(el?el.value:""); }
 function colarConfig(){
-  var msg=function(t){ var m=document.getElementById("cfg_msg"); if(m) m.textContent=t; };
-  if(!navigator.clipboard || !navigator.clipboard.readText){ msg("Toque e segure para colar o link nos campos abaixo."); return; }
-  navigator.clipboard.readText().then(function(txt){
-    if(aplicarCfgTexto(txt)){
-      salvar(); msg("✓ configurado! puxando sua carteira da nuvem...");
-      carregarNuvem();
-      setTimeout(function(){ closeModal(); render(); }, 900);
-    } else { msg("Não achei um link de configuração copiado. Copie o link mágico (⚙ no aparelho que já funciona) e toque aqui de novo."); }
-  }).catch(function(){ msg("Permissão de colar negada — cole manualmente nos campos abaixo."); });
+  var m=document.getElementById("cfg_msg");
+  if(navigator.clipboard && navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(txt){
+      if(txt && txt.indexOf("cfg=")>=0) aplicaCfgEFecha(txt);
+      else if(m) m.textContent="Área de transferência vazia. Cole o link no campo acima e toque em Configurar.";
+    }).catch(function(){ if(m) m.textContent="Não consegui ler a área de transferência. Cole o link no campo acima e toque em Configurar."; });
+  } else if(m){ m.textContent="Cole o link no campo acima e toque em Configurar."; }
 }
 function openToken(){
   const jb=getJB();
   openModal(`<h3>Configurações</h3>
-    <button class="btn btn-pri" style="width:100%;display:block;margin-bottom:10px" onclick="colarConfig()">📋 Colar link de configuração</button>
-    <div class="note" style="margin-top:0;margin-bottom:6px">Atalho novo abriu vazio? Copie o <b>link mágico</b> no aparelho que já funciona (⚙ → Copiar) e toque no botão acima — eu configuro tudo sozinho. Ou preencha manualmente abaixo.</div>
+    <div class="note" style="margin-top:0;margin-bottom:6px"><b>Atalho novo abriu vazio?</b> Cole abaixo o seu <b>link mágico</b> (toque e segure no campo e escolha Colar) e toque em <b>Configurar</b>.</div>
+    <input id="f_cfglink" placeholder="cole aqui o link (https://...#cfg=...)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="margin-bottom:6px">
+    <div class="mrow" style="gap:6px;margin-bottom:2px"><button class="btn btn-pri" style="flex:1" onclick="configDoCampo()">Configurar</button><button class="btn btn-sec" style="flex:0 0 auto" onclick="colarConfig()">📋 Colar</button></div>
     <label>Token brapi.dev (cotações de ETFs/BDRs)</label>${campoColavel("f_token", getToken(), "cole seu token")}
     <div class="note" style="margin-top:14px"><b>☁ Sincronizar PC ↔ celular (opcional)</b><br>
     1. Crie conta gratuita em <b>jsonbin.io</b> → menu API Keys → copie a <b>Master Key</b>.<br>
