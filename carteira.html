@@ -913,6 +913,7 @@ function fetchT(u, ms=8000, opts){
 async function fetchFundamentus(url){
   // Tabela do Fundamentus por 5 caminhos diferentes: 4 proxies CORS + leitor de texto (jina)
   const tentativas = [
+    ()=>fetchT("https://r.jina.ai/"+url,25000).then(r=>{ if(!r.ok) throw 0; return r.text(); }),
     ()=>fetchT(PROXY(url),10000).then(r=>{ if(!r.ok) throw 0; return r.text(); }),
     ()=>fetchT(PROXY2(url),10000).then(r=>{ if(!r.ok) throw 0; return r.text(); }),
     ()=>fetchT(PROXY3(url),10000).then(r=>{ if(!r.ok) throw 0; return r.text(); }),
@@ -956,8 +957,10 @@ function parseFundTexto(txt){
   const limpa = s => s.replace(/\[([^\]]*)\]\([^)]*\)/g,"$1").trim();
   let heads=null; const map={};
   for(const linha of txt.split(/\r?\n/)){
-    if(linha.indexOf("|")<0) continue;
-    let cs = linha.split("|").map(limpa);
+    let cs; var _TAB=String.fromCharCode(9);
+    if(linha.indexOf("|")>=0) cs = linha.split("|").map(limpa);
+    else if(linha.indexOf(_TAB)>=0) cs = linha.split(_TAB).map(limpa);
+    else continue;
     while(cs.length && cs[0]==="") cs.shift();
     while(cs.length && cs[cs.length-1]==="") cs.pop();
     if(!cs.length || /^[-: ]+$/.test(cs.join(""))) continue;
@@ -1102,7 +1105,7 @@ async function fetchBrapi(ticker, token){
 }
 
 function mercadoAberto(){var d=new Date(),dia=d.getDay(),h=d.getHours()+d.getMinutes()/60;return dia>=1&&dia<=5&&h>=10&&h<18.2;}
-async function fetchBrapiLote(tickers, token){
+async function fetchBrapiLote(tickers, token){ return {}; /* brapi limitado a 1 ativo/req no plano; preco das acoes vem do Fundamentus via jina */
   var map={};
   for(var i=0;i<tickers.length;i+=10){
     var lote=tickers.slice(i,i+10);
