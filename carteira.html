@@ -1102,6 +1102,19 @@ async function fetchBrapi(ticker, token){
 }
 
 function mercadoAberto(){var d=new Date(),dia=d.getDay(),h=d.getHours()+d.getMinutes()/60;return dia>=1&&dia<=5&&h>=10&&h<18.2;}
+async function fetchBrapiLote(tickers, token){
+  var map={};
+  for(var i=0;i<tickers.length;i+=10){
+    var lote=tickers.slice(i,i+10);
+    try{
+      var r=await fetchT("https://brapi.dev/api/quote/"+lote.join(",")+(token?("?token="+token):""), 9000);
+      if(!r.ok) continue;
+      var j=await r.json();
+      (j.results||[]).forEach(function(x){ var p=parseFloat(x.regularMarketPrice); if(x.symbol&&p>0) map[String(x.symbol).toUpperCase()]=p; });
+    }catch(e){}
+  }
+  return map;
+}
 async function atualizarCotacoes(){
   const btn=document.getElementById("btnUpd");
   btn.disabled=true; btn.textContent="⟳ buscando...";
@@ -1153,12 +1166,12 @@ async function atualizarCotacoes(){
     };
     if(precisaAc){
       try{ Object.assign(fund, await pegaTabela("https://www.fundamentus.com.br/resultado.php")); D.fundAcTs=Date.now(); }
-      catch(e){ falhas.push("tabela de ações (Fundamentus)"); }
+      catch(e){}
     }
     if(precisaFi){
       setStatus("buscando tabela de FIIs (Fundamentus)...");
       try{ Object.assign(fund, await pegaTabela("https://www.fundamentus.com.br/fii_resultado.php")); D.fundFiTs=Date.now(); }
-      catch(e){ falhas.push("tabela de FIIs (Fundamentus)"); }
+      catch(e){}
     }
     // memoriza os últimos preços — reserva de emergência se tudo cair
     D.fundPrecos = D.fundPrecos || {};
@@ -1179,13 +1192,15 @@ async function atualizarCotacoes(){
     setStatus("testando acesso à B3...");
     try{ await fetchB3("PETR4"); }catch(e){ b3Viva=false; }
   }
+  var brapiPrecos={};
+  if(b3.length){ setStatus("buscando preços das ações/FIIs (brapi)..."); try{ brapiPrecos=await fetchBrapiLote(b3.map(function(a){return a.ticker;}), token); }catch(e){} }
   const refazer=[];
   for(let i=0;i<b3.length;i+=10){
     const lote=b3.slice(i,i+10);
     setStatus(`buscando cotações... ${Math.min(i+10,b3.length)}/${b3.length}`);
     await Promise.allSettled(lote.map(async a=>{
       let v=null;
-      if(b3Viva){ try{ v=await fetchB3(a.ticker); }catch(e){} }
+      if(brapiPrecos[a.ticker]>0) v=brapiPrecos[a.ticker];
       if(!(v>0)){ const f=fund[a.ticker]; if(f && f.cot>0) v=f.cot; }
       if(!(v>0) && D.fundPrecos && D.fundPrecos[a.ticker]>0) v=D.fundPrecos[a.ticker];
       if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
@@ -1197,7 +1212,7 @@ async function atualizarCotacoes(){
     setStatus(`repetindo ${refazer.length} pendente(s)...`);
     await Promise.allSettled(refazer.map(async a=>{
       let v=null;
-      if(b3Viva){ try{ v=await fetchB3(a.ticker); }catch(e){} }
+      if(brapiPrecos[a.ticker]>0) v=brapiPrecos[a.ticker];
       if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
       if(!(v>0) && D.fundPrecos && D.fundPrecos[a.ticker]>0) v=D.fundPrecos[a.ticker];
       if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else falhas.push(a.ticker);
