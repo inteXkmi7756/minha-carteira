@@ -1270,7 +1270,7 @@ function confirmaReset(){
 
 /* ============ INIT ============ */
 render();
-carregarNuvem(); if(!getJB().key && (!D.ativos || !D.ativos.length)) setTimeout(openToken, 500); // puxa da nuvem se houver versão mais recente (sincronização ⚙)
+carregarNuvem().then(function(){ if(DB.maeBin&&DB.maeKey){ lastMaeJson=''; publicarMae(); } }); if(!getJB().key && (!D.ativos || !D.ativos.length)) setTimeout(openToken, 500); // puxa da nuvem se houver versão mais recente (sincronização ⚙)
 // PWA: service worker (só funciona hospedado em https; no PC via arquivo é ignorado)
 if("serviceWorker" in navigator && location.protocol==="https:"){
   navigator.serviceWorker.register("sw.js").catch(()=>{});
