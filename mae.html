@@ -198,7 +198,7 @@ function parseFundHTML(html){
 }
 function parseFundTexto(txt){
  const limpa=s=>s.replace(/\[([^\]]*)\]\([^)]*\)/g,"$1").trim();let heads=null;const map={};
- for(const l of txt.split(/\r?\n/)){ if(l.indexOf("|")<0)continue; let cs=l.split("|").map(limpa);
+ for(const l of txt.split(/\r?\n/)){ var _TAB=String.fromCharCode(9); let cs; if(l.indexOf("|")>=0) cs=l.split("|").map(limpa); else if(l.indexOf(_TAB)>=0) cs=l.split(_TAB).map(limpa); else continue;
   while(cs.length&&cs[0]==="")cs.shift(); while(cs.length&&cs[cs.length-1]==="")cs.pop();
   if(!cs.length||/^[-: ]+$/.test(cs.join("")))continue;
   if(!heads){const low=cs.map(c=>c.toLowerCase());if(low.some(c=>c.includes("cota"))&&low.some(c=>c.includes("p/vp")))heads=low;continue;}
@@ -208,7 +208,7 @@ function parseFundTexto(txt){
  } return map;
 }
 async function fetchFundamentus(url){
- const tent=[()=>fetchT(PROXY(url),10000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT(PROXY3(url),10000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT(PROXY2(url),10000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT("https://r.jina.ai/"+url,25000).then(r=>r.ok?r.text():Promise.reject())];
+ const tent=[()=>fetchT("https://r.jina.ai/"+url,25000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT(PROXY(url),10000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT(PROXY3(url),10000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT(PROXY2(url),10000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT("https://r.jina.ai/"+url,25000).then(r=>r.ok?r.text():Promise.reject())];
  for(const t of tent){ try{ const txt=await t(); if(!txt||txt.length<1000)continue; const map=(txt.indexOf("<table")>=0||txt.indexOf("<TABLE")>=0)?parseFundHTML(txt):parseFundTexto(txt); if(map&&Object.keys(map).length>5)return map; }catch(e){} }
  throw new Error("fundamentus indisponível");
 }
