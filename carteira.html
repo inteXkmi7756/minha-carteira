@@ -808,6 +808,7 @@ function salvaConfig(){
 function openAtivo(i){ const a=D.ativos[i]; const sym=a.moeda==="USD"?"US$":"R$";
   openModal(`<h3>${esc(a.ticker)} <span style="color:var(--faint);font-weight:400;font-size:.78rem">${esc(a.nome)}</span></h3>
     <div style="font-size:.8rem;color:var(--muted)">Posição: <b>${fmt(a.qtd,a.qtd%1?4:0)}</b> × ${sym} ${fmt(a.atual)} = <b>R$ ${fmt(valor(a))}</b> · PM ${sym} ${fmt(a.pm)} (<span class="${varPct(a)>=0?'pos':'neg'}">${fmtPct(varPct(a))}</span>)</div>
+    <div style="font-size:.66rem;color:var(--faint);margin-top:5px">${a.atualTs?("preco de "+new Date(a.atualTs).toLocaleString("pt-BR").slice(0,17)):"cotacao manual / cache"}</div>
     <div class="mbtns">
       <button class="btn btn-buy" onclick="openOp(${i},'compra')">Comprar</button>
       <button class="btn btn-sell" onclick="openOp(${i},'venda')">Vender</button></div>
@@ -1206,20 +1207,22 @@ async function atualizarCotacoes(){
       if(brapiPrecos[a.ticker]>0) v=brapiPrecos[a.ticker];
       if(!(v>0)){ const f=fund[a.ticker]; if(f && f.cot>0) v=f.cot; }
       if(!(v>0) && D.fundPrecos && D.fundPrecos[a.ticker]>0) v=D.fundPrecos[a.ticker];
-      if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
-      if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else refazer.push(a);
+      if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); a.atualTs=Date.now(); ok++; } else refazer.push(a);
     }));
   }
   // segunda chance para falhas passageiras
   if(refazer.length){
-    setStatus(`repetindo ${refazer.length} pendente(s)...`);
-    await Promise.allSettled(refazer.map(async a=>{
+    setStatus("buscando preços que faltam (ETFs/BDRs)...");
+    const semPreco=[];
+    for(const a of refazer){
       let v=null;
-      if(brapiPrecos[a.ticker]>0) v=brapiPrecos[a.ticker];
-      if(!(v>0) && token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
-      if(!(v>0) && D.fundPrecos && D.fundPrecos[a.ticker]>0) v=D.fundPrecos[a.ticker];
-      if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); ok++; } else falhas.push(a.ticker);
-    }));
+      if(token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
+      if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); a.atualTs=Date.now(); ok++; }
+      else if(D.fundPrecos && D.fundPrecos[a.ticker]>0){ a.atual=D.fundPrecos[a.ticker]; semPreco.push(a.ticker); }
+      else semPreco.push(a.ticker);
+      await new Promise(r=>setTimeout(r,300));
+    }
+    if(semPreco.length) avisos.push(semPreco.length+" ativo(s) com preco de cache (fonte indisponivel agora): "+semPreco.slice(0,6).join(", ")+(semPreco.length>6?"...":""));
   }
   if(false) avisos.push("B3 via proxy fora do ar — preços via Fundamentus/brapi (atraso ~15min)");
   // 5) DY dos FI-Infra (CPTI11, KDIF11…) via histórico de proventos da brapi — 1x/dia
