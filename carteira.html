@@ -132,6 +132,16 @@
 #tbl tr.totrow td:nth-child(1){grid-column:1/-1;border-bottom:none!important;}
 }
 </style>
+<style id="legib">
+:root{--faint:#a4abb2;--muted:#c6ccd2;}
+@media (max-width:640px){
+#tbl td{font-size:1rem;}
+#tbl td:not(:first-child)::before{font-size:.7rem;color:var(--muted);letter-spacing:.03em;}
+#tbl td:nth-child(1) .tk{font-size:1.14rem;}
+.anome{font-size:.84rem;color:var(--muted);}
+#tbl tr{gap:11px 12px;padding:13px 14px;}
+}
+</style>
 </head>
 <body>
 
