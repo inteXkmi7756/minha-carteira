@@ -1022,13 +1022,13 @@ async function atualizarCotacoes(){
     const semPreco=[];
     for(const a of refazer){
       let v=null;
-      if(token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} }
+      for(var _t=0;_t<2&&!(v>0);_t++){ try{ v=await fetchYahoo(a.ticker+".SA"); }catch(e){} if(v>0)break; if(token){ try{ v=await fetchBrapi(a.ticker,token); }catch(e){} } if(v>0)break; await new Promise(function(r){setTimeout(r,600);}); }
       if(v>0){ a.atual=parseFloat(parseFloat(v).toFixed(2)); a.atualTs=Date.now(); ok++; }
       else if(D.fundPrecos && D.fundPrecos[a.ticker]>0){ a.atual=D.fundPrecos[a.ticker]; semPreco.push(a.ticker); }
       else semPreco.push(a.ticker);
       await new Promise(r=>setTimeout(r,300));
     }
-    if(semPreco.length) avisos.push(semPreco.length+" ativo(s) com preço de cache (fonte indisponível agora): "+semPreco.slice(0,6).join(", ")+(semPreco.length>6?"...":""));
+    if(semPreco.length) avisos.push(semPreco.length+" ativo(s) sem cotação agora (tento de novo no próximo refresh): "+semPreco.slice(0,6).join(", ")+(semPreco.length>6?"...":""));
   }
   if(false) avisos.push("B3 via proxy fora do ar — preços via Fundamentus/brapi (atraso ~15min)");
   // 5) DY dos FI-Infra (CPTI11, KDIF11…) via histórico de proventos da brapi — 1x/dia
