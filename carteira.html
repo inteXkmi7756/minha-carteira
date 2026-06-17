@@ -328,7 +328,7 @@ async function salvarNuvem(){
   const corpo=JSON.stringify(DB);
   if(corpo===lastSyncJson) return;
   // proteção: um aparelho vazio nunca sobrescreve uma nuvem que tem dados
-  if(bin && dbVazio(DB)){
+  if(bin){ try{ var _rc=await fetchT("https://api.jsonbin.io/v3/b/"+bin+"/latest",12000,{headers:{"X-Master-Key":key}}); var _jc=await _rc.json(); var _nuv=_jc&&_jc.record; if(_nuv&&_nuv.carteiras&&(_nuv.tsMod||0)>(DB.tsSync||0)){ for(var _id in _nuv.carteiras){ var _cN=(_nuv.carteiras[_id].ativos||[]).length, _lN=(DB.carteiras[_id]&&DB.carteiras[_id].ativos?DB.carteiras[_id].ativos.length:0); if(_cN>0&&_lN===0){ setSync("⚠ nao enviei: a nuvem tem carteira que aqui esta vazia - recarregue para puxar"); return; } } } }catch(e){} } if(bin && dbVazio(DB)){
     try{
       const r0=await fetchT("https://api.jsonbin.io/v3/b/"+bin+"/latest",12000,{headers:{"X-Master-Key":key}});
       const j0=await r0.json();
@@ -716,7 +716,7 @@ function colarConfig(){
 var lastMaeJson="";
 async function publicarMae(){
   if(!DB.maeBin || !DB.maeCartId) return;
-  var cart=DB.carteiras[DB.maeCartId]; if(!cart) return;
+  var cart=DB.carteiras[DB.maeCartId]; if(!cart) return; if(!(cart.ativos&&cart.ativos.length)) return;
   var corpo=JSON.stringify({nome:cart.nome,usdbrl:cart.usdbrl,ativos:cart.ativos||[],operacoes:cart.operacoes||[],hist:cart.hist||{},tokenBrapi:getToken()});
   if(corpo===lastMaeJson) return;
   var key=getJB().key; if(!key) return;
@@ -725,7 +725,7 @@ async function publicarMae(){
 var lastMeuJson="";
 async function publicarMeu(){
   if(!DB.meuBin || !DB.meuCartId) return;
-  var cart=DB.carteiras[DB.meuCartId]; if(!cart) return;
+  var cart=DB.carteiras[DB.meuCartId]; if(!cart) return; if(!(cart.ativos&&cart.ativos.length)) return;
   var corpo=JSON.stringify({nome:cart.nome,usdbrl:cart.usdbrl,ativos:cart.ativos||[],operacoes:cart.operacoes||[],hist:cart.hist||{},tokenBrapi:getToken()});
   if(corpo===lastMeuJson) return;
   var key=getJB().key; if(!key) return;
