@@ -342,12 +342,12 @@ async function salvarNuvem(){
       const r=await fetchT("https://api.jsonbin.io/v3/b",12000,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":key,"X-Bin-Name":"carteira-rychard","X-Bin-Private":"true"},body:corpo});
       const j=await r.json();
       const id=j&&j.metadata&&j.metadata.id;
-      if(id){ localStorage.setItem("jb_bin",id); lastSyncJson=corpo; tentativasSync=0; setSync("☁ nuvem criada e sincronizada — copie o ID da nuvem (⚙) para o outro aparelho", true); }
+      if(id){ localStorage.setItem("jb_bin",id); lastSyncJson=corpo; tentativasSync=0; DB.tsSync=DB.tsMod; try{localStorage.setItem("carteiras_rychard_v2",JSON.stringify(DB));}catch(e){} setSync("☁ nuvem criada e sincronizada — copie o ID da nuvem (⚙) para o outro aparelho", true); }
       else falhaSync("nuvem recusou a criação: "+JSON.stringify(j).slice(0,80));
     } else {
       const r=await fetchT("https://api.jsonbin.io/v3/b/"+bin,12000,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":key},body:corpo});
       if(r.ok){
-        lastSyncJson=corpo; tentativasSync=0;
+        lastSyncJson=corpo; tentativasSync=0; DB.tsSync=DB.tsMod; try{localStorage.setItem("carteiras_rychard_v2",JSON.stringify(DB));}catch(e){}
         const ag=new Date();
         setSync("☁ sincronizado às "+String(ag.getHours()).padStart(2,"0")+":"+String(ag.getMinutes()).padStart(2,"0"), true);
       } else falhaSync("erro "+r.status+(r.status===401?" — confira a Master Key no ⚙":""));
@@ -371,7 +371,7 @@ async function carregarNuvem(){
     if(!r.ok) return;
     const j=await r.json();
     const nuvem=j&&j.record;
-    if(nuvem && nuvem.carteiras && !dbVazio(nuvem) && ((nuvem.tsMod||0) > (DB.tsMod||0) || dbVazio(DB))){
+    if(nuvem && nuvem.carteiras && !dbVazio(nuvem) && ((nuvem.tsMod||0) > (DB.tsMod||0) || dbVazio(DB))){ if(DB.tsSync!=null && (DB.tsMod||0)>(DB.tsSync||0) && !dbVazio(DB) && !dbVazio(nuvem)){ setSync("⚠ A nuvem está mais nova, mas há edições locais não enviadas — não sobrescrevi. Recarregue para puxar a nuvem (perde as locais), ou edite algo para enviar as suas.", false); return; }
       DB=nuvem; D=DB.carteiras[DB.ativa]||DB.carteiras[Object.keys(DB.carteiras)[0]];
       _mtCache=null;
       if(typeof CARTEIRAS_FIN!=="undefined" && CARTEIRAS_FIN && !DB.metasFin) DB.metasFin=CARTEIRAS_FIN;
