@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Carteira Mãe">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="cotacoes.js"></script>
 <style>
  :root{--bg:#0e0f11;--card:#17181b;--card2:#1f2125;--border:#26282d;--txt:#f4f5f6;--muted:#9aa0a6;--faint:#686d73;--am:#f2c14e;--verde:#2dd4a7;--verm:#ff6b6b}
  *{margin:0;padding:0;box-sizing:border-box}
@@ -181,51 +182,7 @@ async function carregarNuvem(silencioso){
  }catch(e){ setStatus("sem conexão para buscar a carteira."); return false; }
 }
 
-/* ===== Atualizar cotações: só exibição, sem gravar na nuvem ===== */
-const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
-const PROXY2=u=>"https://corsproxy.io/?url="+encodeURIComponent(u);
-const PROXY3=u=>"https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u);
-function fetchT(u,ms=8000,opts){const c=new AbortController();const id=setTimeout(()=>c.abort(),ms);return fetch(u,Object.assign({signal:c.signal},opts||{})).finally(()=>clearTimeout(id));}
-const parseNumBR=s=>{if(s==null)return NaN;return parseFloat(String(s).replace(/\./g,"").replace("%","").replace(",",".").trim());};
-function parseFundHTML(html){
- const doc=new DOMParser().parseFromString(html,"text/html");
- const tbl=doc.querySelector("table#resultado")||doc.querySelector("table#tabelaResultado")||doc.querySelector("table"); if(!tbl)return null;
- const heads=[...tbl.querySelectorAll("thead th, tr th")].map(th=>th.textContent.trim().toLowerCase());
- const iC=heads.findIndex(h=>h.includes("cota")),iP=heads.findIndex(h=>h.includes("p/vp")),iD=heads.findIndex(h=>h.includes("yield")&&!h.includes("ffo"));
- const map={};
- tbl.querySelectorAll("tbody tr").forEach(tr=>{const td=[...tr.querySelectorAll("td")].map(x=>x.textContent.trim());if(!td.length)return;map[td[0].toUpperCase()]={cot:iC>=0?parseNumBR(td[iC]):NaN,pvp:iP>=0?parseNumBR(td[iP]):NaN,dy:iD>=0?parseNumBR(td[iD]):NaN};});
- return map;
-}
-function parseFundTexto(txt){
- const limpa=s=>s.replace(/\[([^\]]*)\]\([^)]*\)/g,"$1").trim();let heads=null;const map={};
- for(const l of txt.split(/\r?\n/)){ var _TAB=String.fromCharCode(9); let cs; if(l.indexOf("|")>=0) cs=l.split("|").map(limpa); else if(l.indexOf(_TAB)>=0) cs=l.split(_TAB).map(limpa); else continue;
-  while(cs.length&&cs[0]==="")cs.shift(); while(cs.length&&cs[cs.length-1]==="")cs.pop();
-  if(!cs.length||/^[-: ]+$/.test(cs.join("")))continue;
-  if(!heads){const low=cs.map(c=>c.toLowerCase());if(low.some(c=>c.includes("cota"))&&low.some(c=>c.includes("p/vp")))heads=low;continue;}
-  const tk=cs[0].toUpperCase(); if(!/^[A-Z]{4}\d{1,2}$/.test(tk))continue;
-  const iC=heads.findIndex(h=>h.includes("cota")),iP=heads.findIndex(h=>h.includes("p/vp")),iD=heads.findIndex(h=>h.includes("yield")&&!h.includes("ffo"));
-  map[tk]={cot:iC>=0?parseNumBR(cs[iC]):NaN,pvp:iP>=0?parseNumBR(cs[iP]):NaN,dy:iD>=0?parseNumBR(cs[iD]):NaN};
- } return map;
-}
-async function fetchFundamentus(url){
- const tent=[()=>fetchT("https://r.jina.ai/"+url,25000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT(PROXY(url),10000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT(PROXY3(url),10000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT(PROXY2(url),10000).then(r=>r.ok?r.text():Promise.reject()),()=>fetchT("https://r.jina.ai/"+url,25000).then(r=>r.ok?r.text():Promise.reject())];
- for(const t of tent){ try{ const txt=await t(); if(!txt||txt.length<1000)continue; const map=(txt.indexOf("<table")>=0||txt.indexOf("<TABLE")>=0)?parseFundHTML(txt):parseFundTexto(txt); if(map&&Object.keys(map).length>5)return map; }catch(e){} }
- throw new Error("fundamentus indisponível");
-}
-async function fetchStooq(tk){
- const url="https://stooq.com/q/l/?s="+tk.map(t=>t.toLowerCase()+".us").join(",")+"&f=sd2t2ohlcv&h&e=csv";
- for(const u of [PROXY(url),PROXY3(url),"https://r.jina.ai/"+url]){ try{ const res=await fetchT(u,u.indexOf("r.jina.ai")>=0?25000:10000); if(!res.ok)continue; const csv=await res.text(); const map={}; csv.split(/\r?\n/).forEach(l=>{const c=l.split(",");if(!c[0]||!/\.US$/i.test(c[0].trim()))return;const s=c[0].trim().toUpperCase().replace(".US","");const cl=parseFloat(c[6]);if(cl>0)map[s]=cl;}); if(Object.keys(map).length)return map; }catch(e){} }
- throw new Error("stooq indisponível");
-}
-async function fetchYahoo(t){
- const urls=[PROXY("https://query1.finance.yahoo.com/v8/finance/chart/"+t),PROXY3("https://query1.finance.yahoo.com/v8/finance/chart/"+t),"https://r.jina.ai/https://query1.finance.yahoo.com/v8/finance/chart/"+t];
- for(const u of urls){ try{ const res=await fetchT(u,u.indexOf("r.jina.ai")>=0?25000:8000); if(!res.ok)continue; const m=(await res.text()).match(/"regularMarketPrice"\s*:\s*([\d.]+)/); const v=m?parseFloat(m[1]):NaN; if(v>0)return v; }catch(e){} }
- throw new Error("sem preço");
-}
-async function fetchBTC(){
- const f=[async()=>{const r=await fetchT("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");return parseFloat((await r.json()).price);},async()=>{const r=await fetchT("https://api.coinbase.com/v2/prices/BTC-USD/spot");const j=await r.json();return parseFloat(j.data&&j.data.amount);},async()=>{const r=await fetchT("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");const j=await r.json();return j.bitcoin&&j.bitcoin.usd;}];
- for(const fn of f){ try{ const v=await fn(); if(v>0)return v; }catch(e){} } throw new Error("btc");
-}
+/* === motor de cotacoes em cotacoes.js === */
 async function atualizarCotacoes(){
  const btn=document.getElementById("btnUpd"); btn.disabled=true; btn.textContent="⟳ buscando...";
  let ok=0;
