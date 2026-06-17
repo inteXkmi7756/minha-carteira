@@ -242,9 +242,9 @@ async function atualizarCotacoes(){
   try{ Object.assign(fund, await fetchFundamentus("https://www.fundamentus.com.br/resultado.php")); }catch(e){}
   try{ Object.assign(fund, await fetchFundamentus("https://www.fundamentus.com.br/fii_resultado.php")); }catch(e){}
   b3.forEach(a=>{const f=fund[a.ticker]; if(f){ if(f.cot>0){a.atual=+f.cot.toFixed(2);ok++;} a.fund=Object.assign({},a.fund,{pvp:isNaN(f.pvp)?(a.fund&&a.fund.pvp):f.pvp,dy:isNaN(f.dy)?(a.fund&&a.fund.dy):f.dy}); }});
-  const faltam=b3.filter(a=>!(fund[a.ticker]&&fund[a.ticker].cot>0));
+  const faltam = D.tokenBrapi ? b3.filter(a=>!(fund[a.ticker]&&fund[a.ticker].cot>0)) : [];
   for(const a of faltam){
-   try{ const r=await fetchT("https://brapi.dev/api/quote/"+a.ticker,8000); if(r.ok){ const j=await r.json(); const p=(j.results&&j.results[0])?parseFloat(j.results[0].regularMarketPrice):0; if(p>0){ a.atual=+p.toFixed(2); ok++; } } }catch(e){}
+   try{ const r=await fetchT("https://brapi.dev/api/quote/"+a.ticker+"?token="+D.tokenBrapi,8000); if(r.ok){ const j=await r.json(); const p=(j.results&&j.results[0])?parseFloat(j.results[0].regularMarketPrice):0; if(p>0){ a.atual=+p.toFixed(2); ok++; } } }catch(e){}
    await new Promise(rr=>setTimeout(rr,300));
   }
  }
