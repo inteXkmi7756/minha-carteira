@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Carteira da Mãe</title>
+<meta name="theme-color" content="#0e0f11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Carteira Mãe">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="cotacoes.js"></script>
+<style>
+ :root{--bg:#0e0f11;--card:#17181b;--card2:#1f2125;--border:#26282d;--txt:#f4f5f6;--muted:#9aa0a6;--faint:#686d73;--am:#f2c14e;--verde:#2dd4a7;--verm:#ff6b6b}
+ *{margin:0;padding:0;box-sizing:border-box}
+ body{background:var(--bg);color:var(--txt);font-family:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+ .wrap{max-width:1080px;margin:0 auto;padding:0 14px 70px}
+ header{background:#101113;border-bottom:1px solid var(--border);padding:14px 0 12px;position:sticky;top:0;z-index:10}
+ .htop{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+ .htitle{font-size:1.05rem;font-weight:700;letter-spacing:-.01em}
+ .htitle::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--am);margin-right:8px}
+ .ro{display:inline-block;font-size:.6rem;font-weight:700;color:#0d1f1a;background:var(--verde);border-radius:7px;padding:2px 8px;margin-left:6px;vertical-align:middle;text-transform:uppercase;letter-spacing:.04em}
+ .btn{border:none;border-radius:10px;padding:9px 15px;font-size:.76rem;font-weight:600;cursor:pointer;font-family:inherit}
+ .btn-upd{background:var(--am);color:#141414}
+ .btn-upd:disabled{opacity:.55;cursor:wait}
+ .btn-pri{background:var(--am);color:#141414}
+ .status{font-size:.68rem;color:var(--faint);margin-top:7px;min-height:14px}
+ .status.ok{color:var(--verde);font-weight:600}
+ .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:16px 0}
+ .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:15px}
+ .card .lbl{font-size:.6rem;color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+ .card .val{font-size:1.25rem;font-weight:700;letter-spacing:-.02em}
+ .card .sub{font-size:.7rem;color:var(--muted);margin-top:3px}
+ .pos{color:var(--verde)}.neg{color:var(--verm)}
+ .grid2{display:grid;grid-template-columns:330px 1fr;gap:10px;margin-bottom:16px}
+ @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+ .sec-t{font-size:.64rem;font-weight:600;color:var(--faint);margin-bottom:12px;text-transform:uppercase;letter-spacing:.12em}
+ .chartbox{position:relative;height:230px}
+ .arow{margin-bottom:11px}.atop{display:flex;justify-content:space-between;font-size:.74rem;margin-bottom:4px}
+ .abar{height:7px;background:#26282d;border-radius:3px;position:relative}.afill{height:7px;border-radius:3px}
+ .aalvo{position:absolute;top:-3px;width:2px;height:13px;background:#e8e9ea;opacity:.55;border-radius:1px}
+ h2.blk{font-size:.78rem;font-weight:700;margin:22px 0 10px}
+ .tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow-x:auto;margin-bottom:12px}
+ table{width:100%;border-collapse:collapse;min-width:620px}
+ th{font-size:.58rem;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;text-align:right;padding:11px 9px;border-bottom:1px solid var(--border);white-space:nowrap}
+ th:first-child{text-align:left;padding-left:13px}
+ td{padding:10px 9px;border-bottom:1px solid #1d1f23;text-align:right;font-size:.79rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+ td:first-child{text-align:left;padding-left:13px}
+ tr:last-child td{border-bottom:none}.tk{font-weight:700}.nm{font-size:.63rem;color:var(--faint);margin-top:1px}
+ .totrow td{font-weight:700;background:#1b1d21}
+ .note{font-size:.72rem;color:var(--muted);background:var(--card2);border-radius:10px;padding:11px;line-height:1.5;margin-bottom:10px}
+ .setup{max-width:460px;margin:30px auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+ .setup h3{font-size:.95rem;margin-bottom:10px}
+ .setup input{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;font-size:.85rem;font-family:inherit;background:var(--card2);color:var(--txt);outline:none;margin-bottom:8px}
+ .foot{font-size:.66rem;color:var(--faint);text-align:center;margin-top:30px;line-height:1.8}
+</style>
+<link rel="manifest" href="manifest-ver.webmanifest">
+</head>
+<body>
+<header><div class="wrap">
+ <div class="htop">
+  <div class="htitle" id="htitle">Carteira <span class="ro">somente leitura</span></div>
+  <button class="btn btn-upd" id="btnUpd" onclick="atualizarCotacoes()">⟳ Atualizar cotações</button>
+ </div>
+ <div class="status" id="status"></div>
+</div></header>
+
+<div class="wrap">
+ <div id="setup" class="setup" style="display:none">
+  <h3>Configurar acesso</h3>
+  <div class="note">Cole aqui o <b>link de acesso</b> que o Rychard te enviou (toque e segure no campo e escolha Colar) e toque em Entrar. É só visualização — você não altera nada.</div>
+  <input id="f_link" placeholder="cole o link aqui (https://...#mae=...)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <button class="btn btn-pri" style="width:100%" onclick="entrarComCampo()">Entrar</button>
+  <div id="setup_msg" style="color:var(--am);font-size:.72rem;margin-top:8px;min-height:14px"></div>
+ </div>
+
+ <div id="app" style="display:none">
+  <div class="cards" id="cards"></div>
+  <div class="grid2">
+   <div class="card"><div class="sec-t">Alocação por classe</div><div class="chartbox"><canvas id="donut"></canvas></div></div>
+   <div class="card"><div class="sec-t">Atual × alvo (ARCA)</div><div id="bars"></div></div>
+  </div>
+  <div id="tabelas"></div>
+  <div class="foot" id="foot"></div>
+ </div>
+</div>
+
+<script>
+/* ===== aplica link de configuração da mãe (#mae= ou #cfg=) ===== */
+function aplicarMaeTexto(txt){
+ try{
+  if(!txt) return false;
+  var key = txt.indexOf("mae=")>=0 ? "mae=" : (txt.indexOf("cfg=")>=0 ? "cfg=" : "");
+  if(!key) return false;
+  var p = txt.slice(txt.indexOf(key)+key.length).trim();
+  var c1=p.indexOf("&"); if(c1>=0) p=p.slice(0,c1);
+  var c2=p.indexOf("#"); if(c2>=0) p=p.slice(0,c2);
+  var cfg = JSON.parse(decodeURIComponent(p));
+  if(cfg.b) localStorage.setItem("mae_bin", cfg.b);
+  if(cfg.k) localStorage.setItem("mae_key", cfg.k);
+  return !!(cfg.b && cfg.k);
+ }catch(e){ return false; }
+}
+try{ var _s=(location.hash||"")+(location.search||""); if(_s.indexOf("mae=")>=0||_s.indexOf("cfg=")>=0) aplicarMaeTexto(_s); }catch(e){}
+function getCfg(){ return {b:localStorage.getItem("mae_bin")||"", k:localStorage.getItem("mae_key")||""}; }
+
+const API="https://api.jsonbin.io/v3";
+const CL={fiis:"FIIs",acoes:"Ações BR",intl:"Internacional",rf:"Renda Fixa",cripto:"Cripto",ouro:"Ouro"};
+const ALVO={fiis:30,acoes:30,intl:20,rf:12,cripto:5,ouro:3};
+const COR={fiis:"#16a34a",acoes:"#1351b4",intl:"#8b5cf6",rf:"#64748b",cripto:"#22d3ee",ouro:"#eab308"};
+let D = {nome:"Mãe", usdbrl:5, ativos:[], operacoes:[], hist:{}};
+
+const brl=(v,d=2)=>v==null||isNaN(v)?"—":v.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const pctf=v=>v==null||isNaN(v)?"—":(v>=0?"+":"")+v.toFixed(2).replace(".",",")+"%";
+const valor=a=>(a.qtd||0)*(a.atual||0)*(a.moeda==="USD"?D.usdbrl:1);
+const custo=a=>(a.qtd||0)*(a.pm||0)*(a.moeda==="USD"?D.usdbrl:1);
+const varp=a=>a.pm&&a.atual?(a.atual-a.pm)/a.pm*100:null;
+function setStatus(m,ok){ var e=document.getElementById("status"); e.className="status"+(ok?" ok":""); e.textContent=m||""; }
+
+function render(){
+ const app=document.getElementById("app"), setup=document.getElementById("setup");
+ app.style.display=""; setup.style.display="none";
+ document.getElementById("htitle").innerHTML="Carteira"+(D.nome?" — "+esc(D.nome):"")+' <span class="ro">somente leitura</span>';
+ let total=0,custoT=0,pc={}; Object.keys(CL).forEach(c=>pc[c]=0);
+ (D.ativos||[]).forEach(a=>{const v=valor(a);total+=v;custoT+=custo(a);pc[a.classe]=(pc[a.classe]||0)+v;});
+ const naoReal=total-custoT;
+ const realizado=(D.operacoes||[]).reduce((s,o)=>s+(o.tipo==="venda"?(o.resultado||0):0),0);
+ const provAno=(D.ativos||[]).reduce((s,a)=>s+((a.fund&&a.fund.dy>0)?valor(a)*a.fund.dy/100:0),0);
+ if(!D.ativos||!D.ativos.length){
+  document.getElementById("cards").innerHTML='<div class="note" style="grid-column:1/-1">Esta carteira ainda está vazia — assim que o Rychard adicionar os ativos no PC, eles aparecem aqui ao atualizar.</div>';
+  document.getElementById("bars").innerHTML=""; document.getElementById("tabelas").innerHTML="";
+ } else {
+  document.getElementById("cards").innerHTML=`
+   <div class="card"><div class="lbl">Patrimônio total</div><div class="val">R$ ${brl(total)}</div><div class="sub">${D.ativos.length} ativos · dólar R$ ${brl(D.usdbrl)}</div></div>
+   <div class="card"><div class="lbl">Custo de aquisição</div><div class="val">R$ ${brl(custoT)}</div><div class="sub">preço médio</div></div>
+   <div class="card"><div class="lbl">Resultado não realizado</div><div class="val ${naoReal>=0?'pos':'neg'}">${naoReal>=0?'+':'−'}R$ ${brl(Math.abs(naoReal))}</div><div class="sub ${naoReal>=0?'pos':'neg'}">${pctf(custoT?naoReal/custoT*100:0)}</div></div>
+   <div class="card"><div class="lbl">Proventos est./ano</div><div class="val pos">R$ ${brl(provAno)}</div><div class="sub">yield ${(total?provAno/total*100:0).toFixed(2).replace('.',',')}%</div></div>`;
+  document.getElementById("bars").innerHTML=Object.keys(CL).map(c=>{
+   const at=total?pc[c]/total*100:0,al=ALVO[c],d=at-al,cor=Math.abs(d)<3?'var(--verde)':d<0?'var(--verm)':'var(--am)';
+   return `<div class="arow"><div class="atop"><span>${CL[c]}</span><span><b>${at.toFixed(1).replace('.',',')}%</b> <span style="color:var(--faint)">/ alvo ${al}%</span> <span style="color:${cor}">(${d>=0?'+':''}${d.toFixed(1).replace('.',',')}pp)</span></span></div><div class="abar"><div class="afill" style="width:${Math.min(at/40*100,100)}%;background:${COR[c]}"></div><div class="aalvo" style="left:${Math.min(al/40*100,100)}%"></div></div></div>`;
+  }).join("");
+  let html="";
+  Object.keys(CL).forEach(c=>{
+   const lista=(D.ativos||[]).filter(a=>a.classe===c).sort((x,y)=>valor(y)-valor(x)); if(!lista.length)return;
+   const sub=lista.reduce((s,a)=>s+valor(a),0);
+   let rows=`<tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Atual</th><th>Var.</th><th>P/VP</th><th>DY</th><th>Posição</th><th>% cart.</th></tr>`;
+   rows+=lista.map(a=>{const v=valor(a),p=varp(a),sym=a.moeda==="USD"?"US$ ":"R$ ",f=a.fund||{};
+    return `<tr><td><span class="tk">${esc(a.ticker)}</span><div class="nm">${esc(a.nome||"")}${a.tipo?' · '+esc(a.tipo):''}</div></td>
+     <td>${brl(a.qtd,a.qtd%1?(a.qtd<1?5:2):0)}</td><td>${sym}${brl(a.pm)}</td><td>${sym}${brl(a.atual)}</td>
+     <td class="${p==null?'':p>=0?'pos':'neg'}">${pctf(p)}</td><td>${f.pvp!=null?brl(f.pvp):'—'}</td><td>${f.dy!=null?brl(f.dy,1)+'%':'—'}</td>
+     <td>R$ ${brl(v)}</td><td>${total?(v/total*100).toFixed(1).replace('.',','):0}%</td></tr>`;
+   }).join("");
+   rows+=`<tr class="totrow"><td>Total ${CL[c]} (${lista.length})</td><td></td><td></td><td></td><td></td><td></td><td></td><td>R$ ${brl(sub)}</td><td>${total?(sub/total*100).toFixed(1).replace('.',','):0}%</td></tr>`;
+   html+=`<h2 class="blk">${CL[c]}</h2><div class="tbl-wrap"><table>${rows}</table></div>`;
+  });
+  document.getElementById("tabelas").innerHTML=html;
+  document.getElementById("foot").innerHTML=`Resultado realizado: ${realizado>=0?'+':'−'}R$ ${brl(Math.abs(realizado))} · atualizada por Rychard. Somente leitura — não é recomendação de investimento.`;
+  try{ desenharDonut(pc); }catch(e){}
+ }
+}
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+let _chart=null;
+function desenharDonut(pc){
+ if(!window.Chart) return;
+ const labels=[],vals=[],cores=[]; Object.keys(CL).forEach(c=>{if(pc[c]>0){labels.push(CL[c]);vals.push(+pc[c].toFixed(2));cores.push(COR[c]);}});
+ if(_chart){_chart.destroy();}
+ _chart=new Chart(document.getElementById("donut"),{type:"doughnut",data:{labels,datasets:[{data:vals,backgroundColor:cores,borderWidth:2,borderColor:"#17181b"}]},options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{position:"right",labels:{boxWidth:10,font:{size:11},color:"#9aa0a6"}},tooltip:{callbacks:{label:ctx=>{const v=ctx.parsed,t=ctx.dataset.data.reduce((s,x)=>s+x,0);return ` ${ctx.label}: R$ ${brl(v)} (${(v/t*100).toFixed(1)}%)`;}}}}}});
+}
+
+/* ===== lê o bin da Mãe (somente leitura, X-Access-Key) ===== */
+async function carregarNuvem(silencioso){
+ const {b,k}=getCfg(); if(!b||!k){ document.getElementById("app").style.display="none"; document.getElementById("setup").style.display=""; return false; }
+ if(!silencioso) setStatus("buscando sua carteira...");
+ try{
+  const r=await fetch(API+"/b/"+b+"/latest",{headers:{"X-Access-Key":k},cache:"no-store"});
+  if(!r.ok){ setStatus("não consegui acessar (verifique o link com o Rychard) — erro "+r.status); return false; }
+  const j=await r.json();
+  const rec=j&&j.record;
+  if(rec && rec.ativos){ D=Object.assign({nome:"Mãe",usdbrl:5,ativos:[],operacoes:[],hist:{}}, rec); render(); setStatus("☁ carteira carregada (atualizada por Rychard)", true); return true; }
+  setStatus("carteira vazia ou formato inesperado."); render(); return true;
+ }catch(e){ setStatus("sem conexão para buscar a carteira."); return false; }
+}
+
+/* === motor de cotacoes em cotacoes.js === */
+async function atualizarCotacoes(){
+ const btn=document.getElementById("btnUpd"); btn.disabled=true; btn.textContent="⟳ buscando...";
+ let ok=0;
+ setStatus("buscando dólar e Bitcoin...");
+ const passos=[ fetchT("https://economia.awesomeapi.com.br/json/last/USD-BRL").then(r=>r.json()).then(j=>{const v=parseFloat(j.USDBRL.bid);if(v>0){D.usdbrl=+v.toFixed(2);ok++;}}).catch(()=>{}) ];
+ if((D.ativos||[]).some(a=>a.ticker==="BTC")) passos.push(fetchBTC().then(v=>{const b=D.ativos.find(a=>a.ticker==="BTC");if(b&&v>0){b.atual=v;ok++;}}).catch(()=>{}));
+ await Promise.allSettled(passos);
+ const usdEtf=(D.ativos||[]).filter(a=>a.moeda==="USD"&&a.ticker!=="BTC");
+ if(usdEtf.length){ setStatus("buscando ETFs (EUA)..."); let m={}; try{m=await fetchStooq(usdEtf.map(a=>a.ticker));}catch(e){}
+  const falta=[]; usdEtf.forEach(a=>{if(m[a.ticker]>0){a.atual=+m[a.ticker].toFixed(2);ok++;}else falta.push(a);});
+  await Promise.allSettled(falta.map(async a=>{try{a.atual=+(await fetchYahoo(a.ticker)).toFixed(2);ok++;}catch(e){}})); }
+ const b3=(D.ativos||[]).filter(a=>!a.manual&&a.moeda!=="USD"&&a.ticker!=="BTC"&&/^[A-Z]{4}\d{1,2}$/.test(a.ticker));
+ if(b3.length){ setStatus("buscando preços B3 (Fundamentus)..."); let fund={};
+  try{ Object.assign(fund, await fetchFundamentus("https://www.fundamentus.com.br/resultado.php")); }catch(e){}
+  try{ Object.assign(fund, await fetchFundamentus("https://www.fundamentus.com.br/fii_resultado.php")); }catch(e){}
+  b3.forEach(a=>{const f=fund[a.ticker]; if(f){ if(f.cot>0){a.atual=+f.cot.toFixed(2);ok++;} a.fund=Object.assign({},a.fund,{pvp:isNaN(f.pvp)?(a.fund&&a.fund.pvp):f.pvp,dy:isNaN(f.dy)?(a.fund&&a.fund.dy):f.dy}); }});
+  const faltam = D.tokenBrapi ? b3.filter(a=>!(fund[a.ticker]&&fund[a.ticker].cot>0)) : [];
+  for(const a of faltam){
+   try{ const r=await fetchT("https://brapi.dev/api/quote/"+a.ticker+"?token="+D.tokenBrapi,8000); if(r.ok){ const j=await r.json(); const p=(j.results&&j.results[0])?parseFloat(j.results[0].regularMarketPrice):0; if(p>0){ a.atual=+p.toFixed(2); ok++; } } }catch(e){}
+   await new Promise(rr=>setTimeout(rr,300));
+  }
+ }
+ const ag=new Date(); render();
+ setStatus("✅ exibição atualizada às "+String(ag.getHours()).padStart(2,"0")+":"+String(ag.getMinutes()).padStart(2,"0")+" · "+ok+" preços (somente nesta tela)", true);
+ btn.disabled=false; btn.textContent="⟳ Atualizar cotações";
+}
+
+/* ===== setup ===== */
+function entrarComCampo(){
+ const el=document.getElementById("f_link"), msg=document.getElementById("setup_msg");
+ if(aplicarMaeTexto(el?el.value:"")){ msg.textContent="✓ entrando..."; carregarNuvem(); }
+ else msg.textContent="Não reconheci o link. Cole o link completo que o Rychard te enviou.";
+}
+
+/* ===== início ===== */
+(function init(){
+ const {b,k}=getCfg();
+ if(b&&k){ carregarNuvem(); }
+ else { document.getElementById("app").style.display="none"; document.getElementById("setup").style.display=""; }
+})();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
+</body>
+</html>
