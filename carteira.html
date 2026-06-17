@@ -319,7 +319,7 @@ function getJB(){ return { key: localStorage.getItem("jb_key")||"", bin: localSt
 let syncTimer=null, lastSyncJson="";
 function agendaNuvem(){
   if(!getJB().key) return;
-  clearTimeout(syncTimer); syncTimer=setTimeout(function(){ salvarNuvem(); publicarMae(); }, 2500);
+  clearTimeout(syncTimer); syncTimer=setTimeout(function(){ salvarNuvem(); publicarMae(); publicarMeu(); }, 2500);
 }
 function dbVazio(db){ return Object.values((db&&db.carteiras)||{}).every(c=>!(c.ativos&&c.ativos.length)); }
 async function salvarNuvem(){
@@ -716,17 +716,26 @@ var lastMaeJson="";
 async function publicarMae(){
   if(!DB.maeBin || !DB.maeCartId) return;
   var cart=DB.carteiras[DB.maeCartId]; if(!cart) return;
-  var corpo=JSON.stringify({nome:cart.nome,usdbrl:cart.usdbrl,ativos:cart.ativos||[],operacoes:cart.operacoes||[],hist:cart.hist||{}});
+  var corpo=JSON.stringify({nome:cart.nome,usdbrl:cart.usdbrl,ativos:cart.ativos||[],operacoes:cart.operacoes||[],hist:cart.hist||{},tokenBrapi:getToken()});
   if(corpo===lastMaeJson) return;
   var key=getJB().key; if(!key) return;
   try{ var r=await fetchT("https://api.jsonbin.io/v3/b/"+DB.maeBin,12000,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":key},body:corpo}); if(r.ok) lastMaeJson=corpo; }catch(e){}
+}
+var lastMeuJson="";
+async function publicarMeu(){
+  if(!DB.meuBin || !DB.meuCartId) return;
+  var cart=DB.carteiras[DB.meuCartId]; if(!cart) return;
+  var corpo=JSON.stringify({nome:cart.nome,usdbrl:cart.usdbrl,ativos:cart.ativos||[],operacoes:cart.operacoes||[],hist:cart.hist||{},tokenBrapi:getToken()});
+  if(corpo===lastMeuJson) return;
+  var key=getJB().key; if(!key) return;
+  try{ var r=await fetchT("https://api.jsonbin.io/v3/b/"+DB.meuBin,12000,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":key},body:corpo}); if(r.ok) lastMeuJson=corpo; }catch(e){}
 }
 async function configurarMae(){
   var key=getJB().key; if(!key){ setSync("Configure a nuvem (Master Key) e salve primeiro."); return; }
   try{
     if(!DB.maeCartId) DB.maeCartId=DB.ativa;
     var cart=DB.carteiras[DB.maeCartId];
-    var corpo=JSON.stringify({nome:cart.nome,usdbrl:cart.usdbrl,ativos:cart.ativos||[],operacoes:cart.operacoes||[],hist:cart.hist||{}});
+    var corpo=JSON.stringify({nome:cart.nome,usdbrl:cart.usdbrl,ativos:cart.ativos||[],operacoes:cart.operacoes||[],hist:cart.hist||{},tokenBrapi:getToken()});
     if(!DB.maeBin){
       setSync("criando espaco da mae na nuvem...");
       var r=await fetchT("https://api.jsonbin.io/v3/b",15000,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":key,"X-Bin-Name":"carteira-mae","X-Bin-Private":"true"},body:corpo});
@@ -737,7 +746,7 @@ async function configurarMae(){
       var r2=await fetchT("https://api.jsonbin.io/v3/a",15000,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":key,"X-Key-Name":"mae-readonly"},body:JSON.stringify({bins:{read:true,update:false,delete:false,create:false}})});
       var j2=await r2.json(); if(j2&&j2.accessKey){ DB.maeKey=j2.accessKey; } else { setSync("Falha ao criar chave: "+((j2&&j2.message)||r2.status)); return; }
     }
-    salvar(); openToken(); setSync("OK - acesso da mae pronto. Copie o link e envie pra ela.", true);
+    salvar(); salvarNuvem(); openToken(); setSync("OK - acesso da mae pronto. Copie o link e envie pra ela.", true);
   }catch(e){ setSync("Erro ao configurar: "+e); }
 }
 function linkMae(){
@@ -808,7 +817,7 @@ function salvaConfig(){
 function openAtivo(i){ const a=D.ativos[i]; const sym=a.moeda==="USD"?"US$":"R$";
   openModal(`<h3>${esc(a.ticker)} <span style="color:var(--faint);font-weight:400;font-size:.78rem">${esc(a.nome)}</span></h3>
     <div style="font-size:.8rem;color:var(--muted)">Posição: <b>${fmt(a.qtd,a.qtd%1?4:0)}</b> × ${sym} ${fmt(a.atual)} = <b>R$ ${fmt(valor(a))}</b> · PM ${sym} ${fmt(a.pm)} (<span class="${varPct(a)>=0?'pos':'neg'}">${fmtPct(varPct(a))}</span>)</div>
-    <div style="font-size:.66rem;color:var(--faint);margin-top:5px">${a.atualTs?("preco de "+new Date(a.atualTs).toLocaleString("pt-BR").slice(0,17)):"cotacao manual / cache"}</div>
+    <div style="font-size:.66rem;color:var(--faint);margin-top:5px">${a.atualTs?("preço de "+new Date(a.atualTs).toLocaleString("pt-BR").slice(0,17)):"cotacao manual / cache"}</div>
     <div class="mbtns">
       <button class="btn btn-buy" onclick="openOp(${i},'compra')">Comprar</button>
       <button class="btn btn-sell" onclick="openOp(${i},'venda')">Vender</button></div>
@@ -1222,7 +1231,7 @@ async function atualizarCotacoes(){
       else semPreco.push(a.ticker);
       await new Promise(r=>setTimeout(r,300));
     }
-    if(semPreco.length) avisos.push(semPreco.length+" ativo(s) com preco de cache (fonte indisponivel agora): "+semPreco.slice(0,6).join(", ")+(semPreco.length>6?"...":""));
+    if(semPreco.length) avisos.push(semPreco.length+" ativo(s) com preço de cache (fonte indisponível agora): "+semPreco.slice(0,6).join(", ")+(semPreco.length>6?"...":""));
   }
   if(false) avisos.push("B3 via proxy fora do ar — preços via Fundamentus/brapi (atraso ~15min)");
   // 5) DY dos FI-Infra (CPTI11, KDIF11…) via histórico de proventos da brapi — 1x/dia
@@ -1291,7 +1300,7 @@ function confirmaReset(){
 
 /* ============ INIT ============ */
 render();
-carregarNuvem().then(function(){ if(DB.maeBin&&DB.maeKey){ lastMaeJson=''; publicarMae(); } }); if(!getJB().key && (!D.ativos || !D.ativos.length)) setTimeout(openToken, 500); // puxa da nuvem se houver versão mais recente (sincronização ⚙)
+carregarNuvem().then(function(){ if(DB.maeBin&&DB.maeKey){ lastMaeJson=''; publicarMae(); } if(DB.meuBin){ lastMeuJson=''; publicarMeu(); } }); if(!getJB().key && (!D.ativos || !D.ativos.length)) setTimeout(openToken, 500); // puxa da nuvem se houver versão mais recente (sincronização ⚙)
 // PWA: service worker (só funciona hospedado em https; no PC via arquivo é ignorado)
 if("serviceWorker" in navigator && location.protocol==="https:"){
   navigator.serviceWorker.register("sw.js").catch(()=>{});
