@@ -105,6 +105,33 @@
   @media(max-width:640px){ .mh{display:none} .card .val{font-size:1.15rem} }
   @media(min-width:641px){ table{min-width:680px} }
 </style>
+<style id="mob-cards">
+.anome{display:none;}
+@media (max-width:640px){
+.anome{display:block;font-size:.72rem;color:var(--faint);font-weight:400;line-height:1.15;flex-basis:100%;margin-top:1px;}
+.tbl-wrap{overflow-x:visible!important;border:none!important;background:transparent!important;border-radius:0!important;padding:0!important;}
+#tbl{display:block;}
+#tbl tr:first-child{display:none;}
+#tbl tr{display:grid;grid-template-columns:repeat(3,1fr);gap:9px 10px;align-items:start;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 13px;margin:0 0 10px;}
+#tbl td{display:flex;flex-direction:column;gap:1px;border:none!important;padding:0;font-size:.92rem;white-space:normal;min-width:0;}
+#tbl td.mh{display:flex;}
+#tbl td:not(:first-child)::before{font-size:.58rem;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+#tbl td:nth-child(2)::before{content:"Qtd";}
+#tbl td:nth-child(3)::before{content:"Pre\00e7o m\00e9dio";}
+#tbl td:nth-child(4)::before{content:"Atual";}
+#tbl td:nth-child(5)::before{content:"Varia\00e7\00e3o";}
+#tbl td:nth-child(6)::before{content:"P/VP";}
+#tbl td:nth-child(7)::before{content:"DY 12m";}
+#tbl td:nth-child(8)::before{content:"Posi\00e7\00e3o";}
+#tbl td:nth-child(9)::before{content:"% carteira";}
+#tbl td:nth-child(1){grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:4px 7px;border-bottom:1px solid var(--border)!important;padding-bottom:8px;margin-bottom:2px;}
+#tbl tr.totrow{grid-template-columns:1fr 1fr;}
+#tbl tr.totrow td{font-weight:700;}
+#tbl tr.totrow td::before{display:none!important;}
+#tbl tr.totrow td:empty{display:none!important;}
+#tbl tr.totrow td:nth-child(1){grid-column:1/-1;border-bottom:none!important;}
+}
+</style>
 </head>
 <body>
 
@@ -552,7 +579,7 @@ function renderCarteira(t){
     const idx = D.ativos.indexOf(a);
     const f = a.fund||{};
     return `<tr class="clickable" onclick="openAtivo(${idx})">
-      <td><span class="tk">${esc(a.ticker)}</span>
+      <td><span class="tk">${esc(a.ticker)}</span><span class="anome">${esc(a.nome||"")}</span>
         ${a.tese?`<span class="badge b-tese" onclick="event.stopPropagation();openTese(${idx})">tese</span>`:""}
         ${a.manual?`<span class="badge b-man" title="cotação manual">✎ manual</span>`:""}
         <div class="nm">${esc(a.nome)}${a.tipo?` · ${esc(a.tipo)}`:""}</div></td>
