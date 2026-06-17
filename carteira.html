@@ -372,6 +372,7 @@ async function carregarNuvem(){
     if(!r.ok) return;
     const j=await r.json();
     const nuvem=j&&j.record;
+    if(nuvem&&nuvem.carteiras&&DB&&DB.carteiras){var _mud=false;for(var _fi in nuvem.carteiras){var _fc=(nuvem.carteiras[_fi].ativos||[]).length,_fl=(DB.carteiras[_fi]&&DB.carteiras[_fi].ativos?DB.carteiras[_fi].ativos.length:0);if(_fc>0&&_fl===0){DB.carteiras[_fi]=nuvem.carteiras[_fi];_mud=true;}}if(_mud){try{D=DB.carteiras[DB.ativa]||D;salvar();render();}catch(e){}}}
     if(nuvem && nuvem.carteiras && !dbVazio(nuvem) && ((nuvem.tsMod||0) > (DB.tsMod||0) || dbVazio(DB))){ if(DB.tsSync!=null && (DB.tsMod||0)>(DB.tsSync||0) && !dbVazio(DB) && !dbVazio(nuvem)){ setSync("⚠ A nuvem está mais nova, mas há edições locais não enviadas — não sobrescrevi. Recarregue para puxar a nuvem (perde as locais), ou edite algo para enviar as suas.", false); return; }
       for(var _id in DB.carteiras){ try{ var _lN=(DB.carteiras[_id].ativos||[]).length, _cc=nuvem.carteiras[_id], _cN=_cc?(_cc.ativos||[]).length:0; if(_lN>0&&_cN===0) nuvem.carteiras[_id]=DB.carteiras[_id]; }catch(e){} } DB=nuvem; D=DB.carteiras[DB.ativa]||DB.carteiras[Object.keys(DB.carteiras)[0]];
       _mtCache=null;
