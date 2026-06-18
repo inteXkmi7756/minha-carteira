@@ -117,7 +117,7 @@
 #tbl td.mh{display:flex;}
 #tbl td:not(:first-child)::before{font-size:.58rem;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
 #tbl td:nth-child(2)::before{content:"Qtd";}
-#tbl td:nth-child(3)::before{content:"Pre\00e7o m\00e9dio";}
+#tbl td:nth-child(3)::before{content:"Preço médio";}
 #tbl td:nth-child(4)::before{content:"Atual";}
 #tbl td:nth-child(5)::before{content:"Varia\00e7\00e3o";}
 #tbl td:nth-child(6)::before{content:"P/VP";}
@@ -589,7 +589,7 @@ function renderCarteira(t){
     const idx = D.ativos.indexOf(a);
     const f = a.fund||{};
     return `<tr class="clickable" onclick="openAtivo(${idx})">
-      <td><span class="tk">${esc(a.ticker)}</span><span class="anome">${esc(a.nome||"")}</span>
+      <td><span class="tk">${esc(a.ticker)}</span>
         ${a.tese?`<span class="badge b-tese" onclick="event.stopPropagation();openTese(${idx})">tese</span>`:""}
         ${a.manual?`<span class="badge b-man" title="cotação manual">✎ manual</span>`:""}
         <div class="nm">${esc(a.nome)}${a.tipo?` · ${esc(a.tipo)}`:""}</div></td>
