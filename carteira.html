@@ -110,7 +110,10 @@
 @media (max-width:640px){
 .anome{display:block;font-size:.72rem;color:var(--faint);font-weight:400;line-height:1.15;flex-basis:100%;margin-top:1px;}
 .tbl-wrap{overflow-x:visible!important;border:none!important;background:transparent!important;border-radius:0!important;padding:0!important;}
-#tbl{display:block;}
+#tbl{display:block;width:100%;max-width:100%;}
+html,body{overflow-x:hidden;}
+#tbl tbody,#tbl thead{display:block;width:100%;max-width:100%;}
+
 #tbl tr:first-child{display:none;}
 #tbl tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 10px;align-items:start;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 13px;margin:0 0 10px;}
 #tbl td{display:flex;flex-direction:column;gap:1px;border:none!important;padding:0;font-size:.92rem;white-space:normal;min-width:0;overflow-wrap:anywhere;}
