@@ -87,6 +87,21 @@ html,body{overflow-x:hidden;}
 .tbl-wrap table tr.totrow td:nth-child(1){grid-column:1/-1;border-bottom:none!important;}
 }
 </style>
+<style id="logos">
+.ico{position:relative;float:left;width:30px;height:30px;margin:0 9px 0 0;border-radius:50%;overflow:hidden;background:var(--c,#667780);}
+.ico img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:2px;box-sizing:border-box;display:none;}
+.ico i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:11px;color:#0b0d10;}
+.ico.hasimg{background:#fbfbfd;}
+.ico.hasimg img{display:block;}
+.ico.hasimg i{opacity:0;}
+.ico[data-cl=fiis]{--c:#34d399;}.ico[data-cl=acoes]{--c:#60a5fa;}.ico[data-cl=intl]{--c:#a78bfa;}.ico[data-cl=rf]{--c:#94a3b8;}.ico[data-cl=cripto]{--c:#f59e0b;}.ico[data-cl=ouro]{--c:#eab308;}
+.tbl-wrap table td:first-child{overflow:hidden;}
+@media (max-width:640px){
+.tbl-wrap table td:nth-child(1){display:block!important;}
+.ico{width:34px;height:34px;}
+.ico i{font-size:12px;}
+}
+</style>
 </head>
 <body>
 <header><div class="wrap">
@@ -177,7 +192,7 @@ function render(){
    const sub=lista.reduce((s,a)=>s+valor(a),0);
    let rows=`<tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Atual</th><th>Var.</th><th>P/VP</th><th>DY</th><th>Posição</th><th>% cart.</th></tr>`;
    rows+=lista.map(a=>{const v=valor(a),p=varp(a),sym=a.moeda==="USD"?"US$ ":"R$ ",f=a.fund||{};
-    return `<tr><td><span class="tk">${esc(a.ticker)}</span><div class="nm">${esc(a.nome||"")}${a.tipo?' · '+esc(a.tipo):''}</div></td>
+    return `<tr><td><span class="ico" data-cl="${a.classe}"><i>${esc((a.ticker||"").slice(0,2))}</i><img src="https://icons.brapi.dev/icons/${esc(a.ticker)}.svg" onload="this.parentNode.classList.add(&#39;hasimg&#39;)"></span><span class="tk">${esc(a.ticker)}</span><div class="nm">${esc(a.nome||"")}${a.tipo?' · '+esc(a.tipo):''}</div></td>
      <td>${brl(a.qtd,a.qtd%1?(a.qtd<1?5:2):0)}</td><td>${sym}${brl(a.pm)}</td><td>${sym}${brl(a.atual)}</td>
      <td class="${p==null?'':p>=0?'pos':'neg'}">${pctf(p)}</td><td>${f.pvp!=null?brl(f.pvp):'—'}</td><td>${f.dy!=null?brl(f.dy,1)+'%':'—'}</td>
      <td>R$ ${brl(v)}</td><td>${total?(v/total*100).toFixed(1).replace('.',','):0}%</td></tr>`;
