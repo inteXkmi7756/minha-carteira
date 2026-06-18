@@ -63,8 +63,8 @@
 .tbl-wrap{overflow-x:visible!important;border:none!important;background:transparent!important;border-radius:0!important;padding:0!important;}
 .tbl-wrap table{display:block;}
 .tbl-wrap table tr:first-child{display:none;}
-.tbl-wrap table tr{display:grid;grid-template-columns:repeat(3,1fr);gap:11px 12px;align-items:start;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 14px;margin:0 0 10px;}
-.tbl-wrap table td{display:flex;flex-direction:column;gap:1px;border:none!important;padding:0;font-size:1rem;white-space:normal;min-width:0;}
+.tbl-wrap table tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px 12px;align-items:start;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 14px;margin:0 0 10px;}
+.tbl-wrap table td{display:flex;flex-direction:column;gap:1px;border:none!important;padding:0;font-size:1rem;white-space:normal;min-width:0;overflow-wrap:anywhere;}
 .tbl-wrap table td:not(:first-child)::before{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;font-weight:700;}
 .tbl-wrap table td:nth-child(2)::before{content:"Qtd";}
 .tbl-wrap table td:nth-child(3)::before{content:"Preço médio";}
@@ -76,7 +76,7 @@
 .tbl-wrap table td:nth-child(9)::before{content:"% carteira";}
 .tbl-wrap table td:nth-child(1){grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:4px 7px;border-bottom:1px solid var(--border)!important;padding-bottom:8px;margin-bottom:2px;}
 .tbl-wrap table td:nth-child(1) .tk{font-size:1.14rem;}
-.tbl-wrap table tr.totrow{grid-template-columns:1fr 1fr;}
+.tbl-wrap table tr.totrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
 .tbl-wrap table tr.totrow td{font-weight:700;}
 .tbl-wrap table tr.totrow td::before{display:none!important;}
 .tbl-wrap table tr.totrow td:empty{display:none!important;}
