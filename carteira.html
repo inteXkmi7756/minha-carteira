@@ -153,6 +153,7 @@ html,body{overflow-x:hidden;}
 .ico.hasimg{background:#fbfbfd;}
 .ico.hasimg img{display:block;}
 .ico.hasimg i{opacity:0;}
+.ico svg{position:absolute;inset:0;width:100%;height:100%;padding:24%;box-sizing:border-box;}
 .ico[data-cl=fiis]{--c:#34d399;}.ico[data-cl=acoes]{--c:#60a5fa;}.ico[data-cl=intl]{--c:#a78bfa;}.ico[data-cl=rf]{--c:#94a3b8;}.ico[data-cl=cripto]{--c:#f59e0b;}.ico[data-cl=ouro]{--c:#eab308;}
 #tbl td:first-child{overflow:hidden;}
 @media (max-width:640px){
@@ -592,6 +593,7 @@ function renderResumo(t){
   }).join("");
 }
 
+function icoInner(a){var ini=esc((a.ticker||"").slice(0,2));var c=a.classe;if(c==="acoes")return '<i>'+ini+'</i><img src="https://icons.brapi.dev/icons/'+esc(a.ticker)+'.svg" onload="this.parentNode.classList.add(&#39;hasimg&#39;)">';var S={fiis:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M5 22V3h9v6h5v13h-6v-4h-2v4H5zM8 6v2h2V6H8zm0 4v2h2v-2H8zm0 4v2h2v-2H8zm6 0v2h2v-2h-2zm0-4v2h2v-2h-2z"/></svg>',ouro:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M8.6 6h6.8l1.3 3.6H7.3zM2 12.4h8.1l1.3 3.6H.7zm11.9 0H22l-1.3 3.6h-9.4z"/></svg>',rf:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2l8 3v6c0 5-3.4 8.8-8 10.5C7.4 19.8 4 16 4 11V5zm-1 13l5-5-1.4-1.4L11 12.2 9.4 10.6 8 12z"/></svg>',intl:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="8.4"/><ellipse cx="12" cy="12" rx="3.6" ry="8.4"/><path d="M3.6 12h16.8"/></svg>',cripto:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M15.3 10.6c.2-1.4-.9-2.1-2.3-2.6l.5-1.9-1.2-.3-.45 1.8c-.3-.08-.62-.15-.94-.22l.46-1.83-1.16-.3-.47 1.9-1.85-.46-.3 1.24s.86.2.84.2c.47.12.55.43.54.67l-1.3 5.2c-.06.14-.2.35-.52.27l-.84-.2-.58 1.33 1.74.43c.28.07.55.14.82.22l-.48 1.92 1.16.28.47-1.9c.32.09.62.17.92.24l-.47 1.88 1.16.3.48-1.92c1.98.36 3.47.21 4.1-1.58.5-1.44-.03-2.27-1.07-2.8.76-.18 1.33-.68 1.5-1.72zm-2.68 3.7c-.36 1.44-2.78.66-3.56.47l.63-2.54c.78.2 3.3.58 2.93 2.07zm.36-3.73c-.33 1.32-2.35.65-3 .48l.58-2.3c.65.16 2.77.46 2.42 1.82z"/></svg>'};return S[c]||('<i>'+ini+'</i>');}
 function renderCarteira(t){
   // tabs
   document.getElementById("tabs").innerHTML = Object.keys(CLASSES).map(c=>{
@@ -608,7 +610,7 @@ function renderCarteira(t){
     const idx = D.ativos.indexOf(a);
     const f = a.fund||{};
     return `<tr class="clickable" onclick="openAtivo(${idx})">
-      <td><span class="ico" data-cl="${a.classe}"><i>${esc((a.ticker||"").slice(0,2))}</i><img src="https://icons.brapi.dev/icons/${esc(a.ticker)}.svg" onload="this.parentNode.classList.add(&#39;hasimg&#39;)"></span><span class="tk">${esc(a.ticker)}</span>
+      <td><span class="ico" data-cl="${a.classe}">${icoInner(a)}</span><span class="tk">${esc(a.ticker)}</span>
         ${a.tese?`<span class="badge b-tese" onclick="event.stopPropagation();openTese(${idx})">tese</span>`:""}
         ${a.manual?`<span class="badge b-man" title="cotação manual">✎ manual</span>`:""}
         <div class="nm">${esc(a.nome)}${a.tipo?` · ${esc(a.tipo)}`:""}</div></td>
