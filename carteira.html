@@ -146,13 +146,13 @@ html,body{overflow-x:hidden;}
 }
 </style>
 <style id="logos">
-.ico{position:relative;float:left;width:30px;height:30px;margin:0 9px 0 0;border-radius:50%;overflow:hidden;background:#fbfbfd;}
-.ico img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:2px;box-sizing:border-box;}
+.ico{position:relative;float:left;width:30px;height:30px;margin:0 9px 0 0;border-radius:50%;overflow:hidden;background:var(--c,#667780);}
+.ico img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:2px;box-sizing:border-box;display:none;}
 .ico i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:11px;}
-.ico:not(.noimg) i{opacity:0;}
-.ico.noimg{background:var(--c,#667780);}
-.ico.noimg img{display:none;}
-.ico.noimg i{opacity:1;color:#0b0d10;}
+.ico i{color:#0b0d10;}
+.ico.hasimg{background:#fbfbfd;}
+.ico.hasimg img{display:block;}
+.ico.hasimg i{opacity:0;}
 .ico[data-cl=fiis]{--c:#34d399;}.ico[data-cl=acoes]{--c:#60a5fa;}.ico[data-cl=intl]{--c:#a78bfa;}.ico[data-cl=rf]{--c:#94a3b8;}.ico[data-cl=cripto]{--c:#f59e0b;}.ico[data-cl=ouro]{--c:#eab308;}
 #tbl td:first-child{overflow:hidden;}
 @media (max-width:640px){
@@ -608,7 +608,7 @@ function renderCarteira(t){
     const idx = D.ativos.indexOf(a);
     const f = a.fund||{};
     return `<tr class="clickable" onclick="openAtivo(${idx})">
-      <td><span class="ico" data-cl="${a.classe}"><i>${esc((a.ticker||"").slice(0,2))}</i><img src="https://icons.brapi.dev/icons/${esc(a.ticker)}.svg" loading="lazy" onerror="this.parentNode.classList.add(&#39;noimg&#39;)"></span><span class="tk">${esc(a.ticker)}</span>
+      <td><span class="ico" data-cl="${a.classe}"><i>${esc((a.ticker||"").slice(0,2))}</i><img src="https://icons.brapi.dev/icons/${esc(a.ticker)}.svg" onload="this.parentNode.classList.add(&#39;hasimg&#39;)"></span><span class="tk">${esc(a.ticker)}</span>
         ${a.tese?`<span class="badge b-tese" onclick="event.stopPropagation();openTese(${idx})">tese</span>`:""}
         ${a.manual?`<span class="badge b-man" title="cotação manual">✎ manual</span>`:""}
         <div class="nm">${esc(a.nome)}${a.tipo?` · ${esc(a.tipo)}`:""}</div></td>
