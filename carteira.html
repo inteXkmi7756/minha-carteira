@@ -263,14 +263,7 @@ html,body{overflow-x:hidden;}
     <div class="note" style="margin-bottom:14px">Percentuais recomendados lidos da sua Carteira Finclass em 11/06/2026. "Aportar" = quanto falta, em R$, para o ativo atingir a meta sobre o seu patrimônio atual. Verde = na meta (±0,5pp) · vermelho = abaixo · amarelo = acima.</div>
   </div>
 
-  <div class="foot">
-    Cotações: B3 oficial (quase tempo real) com reserva brapi/Fundamentus · Stooq (ETFs EUA) · CoinGecko (BTC) · AwesomeAPI (dólar). Tesouro Direto: edição manual (toque no ativo).<br>
-    Dados salvos neste navegador (localStorage). <span class="linklike" onclick="exportar()">Exportar backup</span> ·
-    <span class="linklike" onclick="document.getElementById('impfile').click()">Importar</span> ·
-    <span class="linklike" onclick="resetar()">Restaurar dados originais</span>
-    <input type="file" id="impfile" accept=".json" style="display:none" onchange="importar(event)">
-    <br>Ferramenta de acompanhamento pessoal — não é recomendação de investimento.
-  </div>
+  <div class="foot"><span class="linklike" onclick="exportar()">Exportar</span> · <span class="linklike" onclick="document.getElementById('impfile').click()">Importar</span> · <span class="linklike" onclick="resetar()">Restaurar padrão</span><input type="file" id="impfile" accept=".json" style="display:none" onchange="importar(event)"></div>
 </div>
 
 <div class="modal-bg" id="modal"><div class="modal" id="modalbox"></div></div>
