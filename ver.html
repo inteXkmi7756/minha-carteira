@@ -204,7 +204,7 @@ function render(){
    html+=`<h2 class="blk">${CL[c]}</h2><div class="tbl-wrap"><table>${rows}</table></div>`;
   });
   document.getElementById("tabelas").innerHTML=html;
-  document.getElementById("foot").innerHTML=`Resultado realizado: ${realizado>=0?'+':'−'}R$ ${brl(Math.abs(realizado))} · atualizada por Rychard. Somente leitura — não é recomendação de investimento.`;
+  document.getElementById("foot").innerHTML=`Somente leitura.`;
   try{ desenharDonut(pc); }catch(e){}
  }
 }
