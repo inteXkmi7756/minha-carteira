@@ -996,9 +996,10 @@ async function atualizarCotacoes(){
       if(btc && v>0){ btc.atual=v; ok++; } else falhas.push("BTC");
     }).catch(()=>falhas.push("BTC")));
   }
+  const __CG={HYPE3:"hyperliquid"};D.ativos.filter(a=>a.classe==="cripto"&&a.ticker!=="BTC"&&__CG[a.ticker]).forEach(a=>{const id=__CG[a.ticker],b="https://api.coingecko.com/api/v3/simple/price?ids="+id+"&vs_currencies=usd";passos.push((async()=>{for(const u of [b,PROXY(b)]){try{const r=await fetchT(u,12000);const j=await r.json();const v=j[id]&&j[id].usd;if(v>0){a.atual=v;ok++;return;}}catch(e){}}falhas.push(a.ticker);})());});
   await Promise.allSettled(passos);
   // 2b) ETFs americanos: Stooq traz TODOS numa única requisição → Yahoo como reserva individual
-  const usdEtfs = D.ativos.filter(a=>a.moeda==="USD" && a.ticker!=="BTC");
+  const usdEtfs = D.ativos.filter(a=>a.moeda==="USD" && a.ticker!=="BTC" && a.classe!=="cripto");
   if(usdEtfs.length){
     setStatus("buscando ETFs americanos...");
     let m={}; try{ m=await fetchStooq(usdEtfs.map(x=>x.ticker)); }catch(e){}
